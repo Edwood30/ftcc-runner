@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --ftcc-primary: #1f5f8b;
+  --ftcc-secondary: #2fa4c8;
+  --ftcc-accent: #e6f4f9;
+  --ftcc-ink: #17324a;
+  --ftcc-muted: #648197;
+  --ftcc-surface: rgba(255, 255, 255, 0.92);
+  --ftcc-border: rgba(31, 95, 139, 0.14);
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+body {
+  @apply m-0 min-h-screen text-slate-800 antialiased;
+  background:
+    radial-gradient(circle at top left, rgba(47, 164, 200, 0.18), transparent 30%),
+    radial-gradient(circle at top right, rgba(31, 95, 139, 0.16), transparent 26%),
+    linear-gradient(180deg, #f6fbfd 0%, #e6f4f9 100%);
+  font-family: "Segoe UI", "Trebuchet MS", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dark body {
+  color: #e2edf5;
+  background:
+    radial-gradient(circle at top left, rgba(47, 164, 200, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(31, 95, 139, 0.14), transparent 22%),
+    linear-gradient(180deg, #07111b 0%, #0d1b2a 100%);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(47, 164, 200, 0.25);
+}
+
+.ftcc-card {
+  background: var(--ftcc-surface);
+  border: 1px solid var(--ftcc-border);
+  box-shadow:
+    0 22px 60px rgba(19, 60, 92, 0.08),
+    0 4px 14px rgba(31, 95, 139, 0.05);
+  backdrop-filter: blur(12px);
+}
+
+.dark .ftcc-card {
+  background: rgba(10, 20, 32, 0.82);
+  border-color: rgba(125, 215, 240, 0.12);
+  box-shadow:
+    0 22px 60px rgba(2, 8, 23, 0.35),
+    0 4px 14px rgba(15, 23, 42, 0.28);
+}
+
+.ftcc-lift {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.ftcc-lift:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 28px 64px rgba(19, 60, 92, 0.12),
+    0 8px 18px rgba(47, 164, 200, 0.08);
+}
+
+.ftcc-fade-in {
+  animation: ftccFadeIn 260ms ease;
+}
+
+@keyframes ftccFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

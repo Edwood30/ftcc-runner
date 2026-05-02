@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.missionRouter = void 0;
+const express_1 = require("express");
+const auth_middleware_js_1 = require("../../middleware/auth.middleware.js");
+const mission_controller_js_1 = require("./mission.controller.js");
+exports.missionRouter = (0, express_1.Router)();
+exports.missionRouter.post("/", auth_middleware_js_1.authMiddleware, (req, res, next) => mission_controller_js_1.missionController.createMission(req, res, next));
+exports.missionRouter.get("/", (req, res, next) => mission_controller_js_1.missionController.getMissions(req, res, next));
+exports.missionRouter.get("/:id", (req, res, next) => mission_controller_js_1.missionController.getMissionById(req, res, next));
+exports.missionRouter.delete("/:id", auth_middleware_js_1.authMiddleware, (req, res, next) => mission_controller_js_1.missionController.deleteMission(req, res, next));
+exports.missionRouter.get("/:id/download", (req, res, next) => mission_controller_js_1.missionController.downloadMissionZip(req, res, next));
