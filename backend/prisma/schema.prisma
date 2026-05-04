@@ -12,6 +12,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Mission {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   what      String
@@ -21,4 +27,23 @@ model Mission {
   folder    String
   images    String[]
   createdAt DateTime @default(now())
+}
+
+/// Inbound mission reports (e.g. Telegram) awaiting admin review before publishing.
+model MissionSubmission {
+  id                 String            @id @default(auto()) @map("_id") @db.ObjectId
+  status             SubmissionStatus  @default(PENDING)
+  what               String
+  where              String
+  when               DateTime
+  caption            String
+  folder             String
+  images             String[]
+  telegramChatId     String?
+  telegramUserId     String?
+  telegramUsername   String?
+  publishedMissionId String?           @db.ObjectId
+  reviewNote         String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 }

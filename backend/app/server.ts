@@ -2,6 +2,8 @@ import { app } from "./index.js";
 import { env } from "./configuration/env.js";
 import { connectPrisma, disconnectPrisma } from "./configuration/prisma.js";
 import { ensureDirectory } from "./helper/file.js";
+import { logger } from "./helper/logger.js";
+import { startTelegramBot } from "./integrations/telegram/telegram-bot.js";
 
 async function bootstrap(): Promise<void> {
   await ensureDirectory(env.IMAGE_ROOT);
@@ -9,13 +11,12 @@ async function bootstrap(): Promise<void> {
   await connectPrisma();
 
   const server = app.listen(env.PORT, () => {
-    // eslint-disable-next-line no-console
-    console.log(`FTCC backend running on port ${env.PORT} with MongoDB connected`);
+    logger.info(`FTCC backend running on port ${env.PORT} with MongoDB connected`);
+    startTelegramBot();
   });
 
   const shutdown = async (signal: string): Promise<void> => {
-    // eslint-disable-next-line no-console
-    console.log(`Received ${signal}. Shutting down FTCC backend...`);
+    logger.info(`Received ${signal}. Shutting down FTCC backend...`);
     server.close(async () => {
       await disconnectPrisma();
       process.exit(0);
@@ -31,8 +32,7 @@ async function bootstrap(): Promise<void> {
 }
 
 void bootstrap().catch(async (error) => {
-  // eslint-disable-next-line no-console
-  console.error("Failed to start server. Check MongoDB access and DATABASE_URL:", error);
+  logger.error("Failed to start server. Check MongoDB access and DATABASE_URL.", error);
   await disconnectPrisma();
   process.exit(1);
 });

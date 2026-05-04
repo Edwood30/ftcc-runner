@@ -32,6 +32,27 @@ function errorMiddleware(error, _req, res, next) {
         });
         return;
     }
+    if (error instanceof Error && error.message === "Submission not found.") {
+        res.status(404).json({
+            success: false,
+            message: error.message,
+            data: null,
+        });
+        return;
+    }
+    const submissionConflict = error instanceof Error &&
+        (error.message === "Only pending submissions can be edited." ||
+            error.message === "Only pending submissions can be approved." ||
+            error.message === "Only pending submissions can be rejected." ||
+            error.message === "Only pending submissions can be linked to a published mission.");
+    if (submissionConflict) {
+        res.status(409).json({
+            success: false,
+            message: error.message,
+            data: null,
+        });
+        return;
+    }
     if (error instanceof Error && isDatabaseConnectivityError(error)) {
         res.status(503).json({
             success: false,

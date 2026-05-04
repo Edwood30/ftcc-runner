@@ -21,6 +21,8 @@ interface MissionModuleProps {
   cancelProcessing: () => void;
   retryFailed: () => Promise<void>;
   openEditor: (file: File) => void;
+  /** True when the current draft was opened from the Telegram inbox (header). */
+  inboxDraftActive?: boolean;
 }
 
 export function MissionModule(props: MissionModuleProps) {
@@ -42,6 +44,7 @@ export function MissionModule(props: MissionModuleProps) {
     cancelProcessing,
     retryFailed,
     openEditor,
+    inboxDraftActive = false,
   } = props;
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -49,7 +52,6 @@ export function MissionModule(props: MissionModuleProps) {
   const [dragOver, setDragOver] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
 
-  // ✅ Clear form with confirmation
   const handleClearForm = () => {
     const confirmed = window.confirm("Clear all mission data?");
     if (!confirmed) return;
@@ -67,7 +69,7 @@ export function MissionModule(props: MissionModuleProps) {
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#E6F4F9] px-3 py-1 text-xs font-semibold tracking-[0.24em] text-[#1F5F8B] dark:bg-[#13344A] dark:text-[#8EDCF2]">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-sm shadow-sm dark:bg-[#0E2132]">
-              🩺
+              FT
             </span>
             Automate YAKAP Content Generation
           </div>
@@ -80,6 +82,12 @@ export function MissionModule(props: MissionModuleProps) {
           </p>
         </div>
       </div>
+
+      {inboxDraftActive && (
+        <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 dark:border-amber-400/25 dark:bg-amber-500/10 dark:text-amber-100">
+          <span className="font-semibold">Telegram inbox draft.</span> Edit photos below, run <strong>Generate Mission Pack</strong>, then save to history from the preview panel. The inbox item will clear after a successful save.
+        </div>
+      )}
 
       {/* STEP 1 */}
       <div className="grid gap-5">
@@ -119,7 +127,7 @@ export function MissionModule(props: MissionModuleProps) {
           </div>
         </div>
 
-        {/* STEP 2 - UPLOAD (DESIGN PRESERVED + HOVER ADDED) */}
+        {/* STEP 2 - UPLOAD */}
         <div className="rounded-[24px] border border-[#1F5F8B]/10 bg-gradient-to-br from-white to-[#F5FBFD] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] dark:border-white/10 dark:bg-gradient-to-br dark:from-[#0E1D2D] dark:to-[#13283B] dark:shadow-none">
           <div className="mb-4 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F4F9] text-base font-bold text-[#1F5F8B] dark:bg-[#15364D] dark:text-[#8EDCF2]">
@@ -171,7 +179,7 @@ export function MissionModule(props: MissionModuleProps) {
 
             <div className="relative flex flex-col items-center gap-3">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl shadow-[0_10px_24px_rgba(31,95,139,0.12)] dark:bg-[#0E2132]">
-                📸
+                +
               </div>
               <div>
                 <p className="text-base font-bold text-[#17324A] dark:text-white">
@@ -202,6 +210,17 @@ export function MissionModule(props: MissionModuleProps) {
           </div>
         </div>
       </div>
+
+      {uploadIssues.length > 0 && (
+        <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 dark:border-amber-400/25 dark:bg-amber-500/10 dark:text-amber-100">
+          <p className="font-semibold">Some uploads need attention.</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            {uploadIssues.map((issue) => (
+              <li key={issue}>{issue}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* FILE GRID */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">

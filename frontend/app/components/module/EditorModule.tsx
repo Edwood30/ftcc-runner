@@ -83,7 +83,10 @@ export function EditorModule({
             </Button>
             <Button
               className="flex flex-wrap gap-3"
-              onClick={() => void onSaveHistory()}
+              onClick={async () => {
+                await onSaveHistory();
+                window.location.reload();
+              }}
               disabled={!processedImages.length || isSavingHistory || isHistorySaved}
             >
               {isSavingHistory ? "Saving..." : isHistorySaved ? "Saved to History" : "Save History"}

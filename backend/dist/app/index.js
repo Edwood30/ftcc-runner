@@ -13,6 +13,7 @@ const prisma_js_1 = require("./configuration/prisma.js");
 const logger_middleware_js_1 = require("./middleware/logger.middleware.js");
 const error_middleware_js_1 = require("./middleware/error.middleware.js");
 const mission_router_js_1 = require("./modules/mission/mission.router.js");
+const submission_router_js_1 = require("./modules/submission/submission.router.js");
 exports.app = (0, express_1.default)();
 exports.app.use((0, helmet_1.default)({
     crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -56,5 +57,6 @@ exports.app.get("/health", async (_req, res, next) => {
         next(error);
     }
 });
+exports.app.use("/missions", submission_router_js_1.submissionRouter);
 exports.app.use("/missions", mission_router_js_1.missionRouter);
 exports.app.use(error_middleware_js_1.errorMiddleware);

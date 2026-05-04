@@ -1,9 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { env } from "../../configuration/env";
 import { createMission, deleteMissionHistory, fetchMissionHistory, getMissionDownloadUrl } from "../../services/mission-service";
-import type { MissionHistoryFilters, MissionHistoryItem, ProcessedImage } from "../../types/mission";
+import {
+  fetchSubmissions,
+  linkSubmissionToPublishedMission,
+  rejectSubmission,
+} from "../../services/submission-service";
+import type { InboxSubmissionItem, MissionHistoryFilters, MissionHistoryItem, ProcessedImage } from "../../types/mission";
 import { useImageEditor } from "../../hooks/useImageEditor";
 import { useMissionGenerator } from "../../hooks/useMissionGenerator";
+import type { AppHeaderInboxProps } from "../common/AppHeader";
 import { AppHeader } from "../common/AppHeader";
 import { HistoryDetailModal } from "../domain/HistoryDetailModal";
 import { ImageEditorModal } from "../domain/ImageEditorModal";
@@ -15,6 +21,7 @@ import { MissionModule } from "../module/MissionModule";
 export function DashboardPage() {
   const { editedImages, editingFile, openEditor, closeEditor, saveEditedImage, clearEditedImages } = useImageEditor();
   const mission = useMissionGenerator(editedImages);
+  const { hydrateFromInboxSubmission } = mission;
   const [activePreview, setActivePreview] = useState<ProcessedImage | null>(null);
   const [history, setHistory] = useState<MissionHistoryItem[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
@@ -29,6 +36,12 @@ export function DashboardPage() {
   const [isHistorySaved, setIsHistorySaved] = useState(false);
   const [historyStatus, setHistoryStatus] = useState("");
   const [historyStatusTone, setHistoryStatusTone] = useState<"success" | "error" | "info">("info");
+
+  const [pendingInboxItems, setPendingInboxItems] = useState<InboxSubmissionItem[]>([]);
+  const [pendingInboxTotal, setPendingInboxTotal] = useState(0);
+  const [pendingInboxLoading, setPendingInboxLoading] = useState(false);
+  const [pendingInboxError, setPendingInboxError] = useState("");
+  const [loadedInboxSubmissionId, setLoadedInboxSubmissionId] = useState<string | null>(null);
 
   const loadHistory = useCallback(async (page = historyPage, filters = historyFilters) => {
     setIsHistoryLoading(true);
@@ -50,6 +63,72 @@ export function DashboardPage() {
     void loadHistory();
   }, [loadHistory]);
 
+  const loadPendingInbox = useCallback(async () => {
+    setPendingInboxLoading(true);
+    try {
+      const result = await fetchSubmissions(1, 40, "PENDING");
+      setPendingInboxItems(result.items);
+      setPendingInboxTotal(result.total);
+      setPendingInboxError("");
+    } catch (error) {
+      setPendingInboxError(error instanceof Error ? error.message : "Unable to load inbox.");
+    } finally {
+      setPendingInboxLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadPendingInbox();
+  }, [loadPendingInbox]);
+
+  const handleLoadInboxIntoMission = useCallback(
+    async (item: InboxSubmissionItem) => {
+      setGeneratedBatch(null);
+      setIsHistorySaved(false);
+      setHistoryStatusTone("info");
+      clearEditedImages();
+      setLoadedInboxSubmissionId(item.id);
+      try {
+        await hydrateFromInboxSubmission(item, env.API_BASE_URL);
+        setHistoryStatus("Loaded from Telegram inbox. Edit images in Step 2, generate your pack, then save to history.");
+      } catch (error) {
+        setLoadedInboxSubmissionId(null);
+        setHistoryStatus(error instanceof Error ? error.message : "Could not load submission into the mission editor.");
+        setHistoryStatusTone("error");
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [clearEditedImages, hydrateFromInboxSubmission],
+  );
+
+  const handleRejectInbox = useCallback(async (id: string) => {
+    await rejectSubmission(id, "Rejected from inbox.");
+    await loadPendingInbox();
+  }, [loadPendingInbox]);
+
+  const inboxHeaderProps = useMemo<AppHeaderInboxProps>(
+    () => ({
+      assetBaseUrl: env.API_BASE_URL,
+      pendingCount: pendingInboxTotal,
+      items: pendingInboxItems,
+      loading: pendingInboxLoading,
+      error: pendingInboxError || undefined,
+      onRefresh: loadPendingInbox,
+      onLoadIntoMission: handleLoadInboxIntoMission,
+      onReject: handleRejectInbox,
+    }),
+    [
+      handleLoadInboxIntoMission,
+      handleRejectInbox,
+      loadPendingInbox,
+      pendingInboxError,
+      pendingInboxItems,
+      pendingInboxLoading,
+      pendingInboxTotal,
+    ],
+  );
+
   const handleClear = () => {
     mission.clearAll();
     clearEditedImages();
@@ -57,6 +136,7 @@ export function DashboardPage() {
     setIsHistorySaved(false);
     setHistoryStatus("");
     setHistoryStatusTone("info");
+    setLoadedInboxSubmissionId(null);
   };
 
   const handleGenerate = async () => {
@@ -82,6 +162,7 @@ export function DashboardPage() {
     if (!generatedBatch || isSavingHistory || isHistorySaved) return;
     setIsSavingHistory(true);
     setHistoryStatus("");
+    const inboxId = loadedInboxSubmissionId;
     try {
       const result = await createMission({
         what: generatedBatch.what,
@@ -90,6 +171,15 @@ export function DashboardPage() {
         caption: generatedBatch.caption,
         images: generatedBatch.images.map((item) => item.dataURL),
       });
+      if (inboxId) {
+        try {
+          await linkSubmissionToPublishedMission(inboxId, result.mission.id);
+        } catch (linkError) {
+          setPendingInboxError(linkError instanceof Error ? linkError.message : "Inbox link after publish failed.");
+        }
+        setLoadedInboxSubmissionId(null);
+        void loadPendingInbox();
+      }
       setIsHistorySaved(true);
       setHistoryStatus(
         result.facebook.status === "posted"
@@ -124,7 +214,7 @@ export function DashboardPage() {
 
   return (
     <div className="min-h-screen">
-      <AppHeader />
+      <AppHeader inbox={inboxHeaderProps} />
       <main className="mx-auto grid max-w-7xl gap-6 px-4 py-8 xl:grid-cols-[1.02fr_0.98fr]">
         <MissionModule
           form={mission.form}
@@ -144,6 +234,7 @@ export function DashboardPage() {
           cancelProcessing={mission.cancelProcessing}
           retryFailed={mission.retryFailed}
           openEditor={openEditor}
+          inboxDraftActive={Boolean(loadedInboxSubmissionId)}
         />
         <EditorModule
           caption={generatedBatch?.caption ?? mission.caption}

@@ -8,6 +8,8 @@ exports.buildMissionFolderName = buildMissionFolderName;
 exports.parseBase64Image = parseBase64Image;
 exports.ensureDirectory = ensureDirectory;
 exports.saveMissionImages = saveMissionImages;
+exports.buildPendingSubmissionFolder = buildPendingSubmissionFolder;
+exports.saveMissionImageBuffers = saveMissionImageBuffers;
 exports.removeMissionFolder = removeMissionFolder;
 const promises_1 = __importDefault(require("node:fs/promises"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -39,6 +41,22 @@ async function saveMissionImages(folder, images) {
         const fileName = `image_${index + 1}.jpg`;
         const filePath = node_path_1.default.join(folderPath, fileName);
         await promises_1.default.writeFile(filePath, parseBase64Image(images[index]));
+        imagePaths.push(node_path_1.default.join("assets", "images", folder, fileName).replace(/\\/g, "/"));
+    }
+    return imagePaths;
+}
+/** Unique folder for inbound submissions (avoids collisions with same location/date). */
+function buildPendingSubmissionFolder(where, when) {
+    return `${buildMissionFolderName(where, when)}_tg_${Date.now()}`;
+}
+async function saveMissionImageBuffers(folder, buffers) {
+    const folderPath = node_path_1.default.join(env_js_1.env.IMAGE_ROOT, folder);
+    await ensureDirectory(folderPath);
+    const imagePaths = [];
+    for (let index = 0; index < buffers.length; index += 1) {
+        const fileName = `image_${index + 1}.jpg`;
+        const filePath = node_path_1.default.join(folderPath, fileName);
+        await promises_1.default.writeFile(filePath, buffers[index]);
         imagePaths.push(node_path_1.default.join("assets", "images", folder, fileName).replace(/\\/g, "/"));
     }
     return imagePaths;

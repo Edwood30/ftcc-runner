@@ -32,7 +32,7 @@ export function PreviewModal({ activePreview, setActivePreview, processedImages 
           <Button aria-label="Next image" onClick={() => move(1)}>
             &rarr;
           </Button>
-          <Button className="border-transparent bg-[#2FA4C8] text-white hover:bg-[#2494b6]" onClick={downloadCurrent}>
+          <Button onClick={downloadCurrent}>
             Download
           </Button>
           <Button variant="danger" onClick={() => setActivePreview(null)}>

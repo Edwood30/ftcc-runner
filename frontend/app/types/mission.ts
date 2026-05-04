@@ -49,3 +49,30 @@ export interface SaveMissionResult {
   mission: MissionHistoryItem;
   facebook: FacebookPublishResult;
 }
+
+export type SubmissionStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export interface InboxSubmissionItem {
+  id: string;
+  status: SubmissionStatus;
+  what: string;
+  where: string;
+  when: string;
+  caption: string;
+  folder: string;
+  images: string[];
+  telegramChatId?: string | null;
+  telegramUserId?: string | null;
+  telegramUsername?: string | null;
+  publishedMissionId?: string | null;
+  reviewNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InboxListResponse {
+  items: InboxSubmissionItem[];
+  total: number;
+  page: number;
+  limit: number;
+}

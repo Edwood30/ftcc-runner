@@ -7,6 +7,7 @@ import { pingPrisma } from "./configuration/prisma.js";
 import { loggerMiddleware } from "./middleware/logger.middleware.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import { missionRouter } from "./modules/mission/mission.router.js";
+import { submissionRouter } from "./modules/submission/submission.router.js";
 
 export const app = express();
 
@@ -57,5 +58,6 @@ app.get("/health", async (_req, res, next) => {
   }
 });
 
+app.use("/missions", submissionRouter);
 app.use("/missions", missionRouter);
 app.use(errorMiddleware);
