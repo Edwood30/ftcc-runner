@@ -41,7 +41,6 @@ interface HistoryTimeline {
 
 const HANDLE_SIZE = 10;
 const MAX_TIMELINE = 20;
-const HD_EXPORT_SCALE = 3;
 
 export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: ImageEditorModalProps) {
   const canvasRef      = useRef<HTMLCanvasElement | null>(null);
@@ -506,26 +505,6 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
     onClose();
   };
 
-  const exportHD = useCallback(() => {
-    const base = canvasRef.current;
-    const overlay = overlayCanvasRef.current;
-    if (!base || base.width === 0) return;
-    const scale = HD_EXPORT_SCALE;
-    const out = document.createElement("canvas");
-    out.width = Math.round(base.width * scale);
-    out.height = Math.round(base.height * scale);
-    const ctx = out.getContext("2d");
-    if (!ctx) return;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(base, 0, 0, out.width, out.height);
-    if (overlay && overlay.width > 0) ctx.drawImage(overlay, 0, 0, out.width, out.height);
-    const baseName = file.name.replace(/\.[^/.]+$/, "") || "image";
-    const a = document.createElement("a");
-    a.href = out.toDataURL("image/png");
-    a.download = `${baseName}-hd-${scale}x.png`;
-    a.click();
-  }, [file.name]);
 
   // ── Tool definitions ───────────────────────────────────────────────────────
   const tools: { id: Tool; label: string; icon: React.ReactNode; panel?: ActivePanel }[] = [
@@ -614,14 +593,6 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
               <button className="panel-btn" onClick={undo} disabled={!canUndo} title="Undo">↩ Undo</button>
               <button className="panel-btn" onClick={redo} disabled={!canRedo} title="Redo">↪ Redo</button>
               <div className="sep" />
-              <button
-                type="button"
-                className="panel-btn"
-                onClick={exportHD}
-                title={`Download PNG at ${HD_EXPORT_SCALE}× resolution (high-quality smoothing)`}
-              >
-                HD Export
-              </button>
               <button
                 onClick={save}
                 className="px-4 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-white text-xs font-600 transition-colors"
