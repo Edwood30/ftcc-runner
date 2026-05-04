@@ -25,7 +25,23 @@ interface CropRect {
   startX: number; startY: number;
 }
 
+/** Full editor snapshot for timeline undo/redo */
+interface HistoryState {
+  image: string;
+  mask: string;
+  overlay: string;
+  adjustments: Adjustments;
+  flipped: { h: boolean; v: boolean };
+}
+
+interface HistoryTimeline {
+  past: HistoryState[];
+  future: HistoryState[];
+}
+
 const HANDLE_SIZE = 10;
+const MAX_TIMELINE = 20;
+const HD_EXPORT_SCALE = 3;
 
 export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: ImageEditorModalProps) {
   const canvasRef      = useRef<HTMLCanvasElement | null>(null);
@@ -50,12 +66,23 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
   const [isCropping, setIsCropping]       = useState(false);
   const [cursorPos, setCursorPos]         = useState({ x: -999, y: -999 });
   const [showCursor, setShowCursor]       = useState(false);
-  const [history, setHistory]             = useState<string[]>([]);
+  const [timeline, setTimeline]           = useState<HistoryTimeline>({ past: [], future: [] });
+  const [historyRestoreKey, setHistoryRestoreKey] = useState(0);
   const [flipped, setFlipped]             = useState({ h: false, v: false });
 
   const lastPos      = useRef<{ x: number; y: number } | null>(null);
   const panStart     = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
   const cropStart    = useRef<{ x: number; y: number } | null>(null);
+  const sourceDataURLRef = useRef("");
+  const adjustmentsRef   = useRef(adjustments);
+  const flippedRef       = useRef(flipped);
+  const pendingLayerRestoreRef = useRef<{ mask: string; overlay: string } | null>(null);
+  const timelineRef = useRef(timeline);
+  timelineRef.current = timeline;
+
+  sourceDataURLRef.current = sourceDataURL;
+  adjustmentsRef.current   = adjustments;
+  flippedRef.current       = flipped;
 
   // ── Load file ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -65,12 +92,27 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
     reader.readAsDataURL(file);
   }, [file, initialDataURL]);
 
+  const maskHasPaint = useCallback((mask: HTMLCanvasElement) => {
+    const ctx = mask.getContext("2d");
+    if (!ctx || mask.width === 0 || mask.height === 0) return false;
+    const { data } = ctx.getImageData(0, 0, mask.width, mask.height);
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] > 0) return true;
+    }
+    return false;
+  }, []);
+
   // ── Draw image with adjustments ────────────────────────────────────────────
   const drawImage = useCallback((dataURL: string) => {
     const canvas = canvasRef.current;
     if (!canvas || !dataURL) return;
     const img = new Image();
     img.onload = () => {
+      const layerRestore = pendingLayerRestoreRef.current;
+      pendingLayerRestoreRef.current = null;
+
+      const prevW = canvas.width;
+      const prevH = canvas.height;
       canvas.width  = img.width;
       canvas.height = img.height;
       const ctx = canvas.getContext("2d");
@@ -86,32 +128,113 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
       ctx.restore();
 
       [maskCanvasRef, overlayCanvasRef].forEach((r) => {
-        if (r.current) {
-          r.current.width  = img.width;
-          r.current.height = img.height;
-          r.current.getContext("2d")?.clearRect(0, 0, img.width, img.height);
+        const c = r.current;
+        if (!c) return;
+        const sizeChanged = c.width !== img.width || c.height !== img.height;
+        if (sizeChanged) {
+          c.width = img.width;
+          c.height = img.height;
         }
       });
-      setHasMask(false);
+
+      const applyLayersAndMaskFlag = () => {
+        const mask = maskCanvasRef.current;
+        if (mask) setHasMask(maskHasPaint(mask));
+        else setHasMask(false);
+      };
+
+      if (layerRestore) {
+        const mask = maskCanvasRef.current;
+        const overlay = overlayCanvasRef.current;
+        let pending = 0;
+        const scheduleLayer = (target: HTMLCanvasElement | null, src: string) => {
+          if (!target) return;
+          pending += 1;
+          const im = new Image();
+          im.onload = () => {
+            target.getContext("2d")?.drawImage(im, 0, 0);
+            pending -= 1;
+            if (pending === 0) applyLayersAndMaskFlag();
+          };
+          im.onerror = () => {
+            pending -= 1;
+            if (pending === 0) applyLayersAndMaskFlag();
+          };
+          im.src = src;
+        };
+        scheduleLayer(mask, layerRestore.mask);
+        scheduleLayer(overlay, layerRestore.overlay);
+        if (pending === 0) applyLayersAndMaskFlag();
+      } else {
+        if (prevW !== img.width || prevH !== img.height) setHasMask(false);
+        else {
+          const m = maskCanvasRef.current;
+          if (m) setHasMask(maskHasPaint(m));
+          else setHasMask(false);
+        }
+      }
     };
     img.src = dataURL;
-  }, [adjustments, flipped]);
+  }, [adjustments, flipped, maskHasPaint]);
 
-  useEffect(() => { drawImage(sourceDataURL); }, [sourceDataURL, drawImage]);
+  useEffect(() => { drawImage(sourceDataURL); }, [sourceDataURL, drawImage, historyRestoreKey]);
 
-  // ── History ────────────────────────────────────────────────────────────────
-  const pushHistory = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    setHistory((h) => [...h.slice(-19), canvas.toDataURL("image/png")]);
-  };
+  const captureHistoryState = useCallback((): HistoryState | null => {
+    const mask = maskCanvasRef.current;
+    const overlay = overlayCanvasRef.current;
+    if (!mask || !overlay || !sourceDataURLRef.current) return null;
+    return {
+      image: sourceDataURLRef.current,
+      mask: mask.toDataURL("image/png"),
+      overlay: overlay.toDataURL("image/png"),
+      adjustments: { ...adjustmentsRef.current },
+      flipped: { ...flippedRef.current },
+    };
+  }, []);
 
-  const undo = () => {
-    if (!history.length) return;
-    const prev = history[history.length - 1];
-    setHistory((h) => h.slice(0, -1));
-    setSourceDataURL(prev);
-  };
+  const applyHistoryState = useCallback((state: HistoryState) => {
+    pendingLayerRestoreRef.current = { mask: state.mask, overlay: state.overlay };
+    setAdjustments({ ...state.adjustments });
+    setFlipped({ ...state.flipped });
+    setSourceDataURL(state.image);
+    setHistoryRestoreKey((k) => k + 1);
+  }, []);
+
+  const pushHistory = useCallback(() => {
+    const snap = captureHistoryState();
+    if (!snap) return;
+    const t = timelineRef.current;
+    const next = { past: [...t.past, snap].slice(-MAX_TIMELINE), future: [] as HistoryState[] };
+    timelineRef.current = next;
+    setTimeline(next);
+  }, [captureHistoryState]);
+
+  const canUndo = timeline.past.length > 0;
+  const canRedo = timeline.future.length > 0;
+
+  const undo = useCallback(() => {
+    const t = timelineRef.current;
+    if (!t.past.length) return;
+    const currentSnap = captureHistoryState();
+    if (!currentSnap) return;
+    const prevState = t.past[t.past.length - 1];
+    applyHistoryState(prevState);
+    const next = { past: t.past.slice(0, -1), future: [currentSnap, ...t.future] };
+    timelineRef.current = next;
+    setTimeline(next);
+  }, [captureHistoryState, applyHistoryState]);
+
+  const redo = useCallback(() => {
+    const t = timelineRef.current;
+    if (!t.future.length) return;
+    const currentSnap = captureHistoryState();
+    if (!currentSnap) return;
+    const nextState = t.future[0];
+    applyHistoryState(nextState);
+    const next = { past: [...t.past, currentSnap].slice(-MAX_TIMELINE), future: t.future.slice(1) };
+    timelineRef.current = next;
+    setTimeline(next);
+  }, [captureHistoryState, applyHistoryState]);
 
   // ── Rotate ─────────────────────────────────────────────────────────────────
   const rotate = (clockwise: boolean) => {
@@ -234,6 +357,7 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
   const startPaint = (e: React.MouseEvent | React.TouchEvent) => {
     if (tool !== "brush" && tool !== "eraser") return;
     e.preventDefault();
+    pushHistory();
     setIsPainting(true);
     lastPos.current = null;
     paint(e);
@@ -241,12 +365,19 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
 
   const stopPaint = () => { setIsPainting(false); lastPos.current = null; };
 
-  const clearMask = () => {
+  const clearMaskLayers = () => {
     [maskCanvasRef, overlayCanvasRef].forEach((r) => {
       const c = r.current;
       if (c) c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
     });
     setHasMask(false);
+  };
+
+  const clearMask = () => {
+    const mask = maskCanvasRef.current;
+    if (mask && !maskHasPaint(mask)) return;
+    pushHistory();
+    clearMaskLayers();
   };
 
   // ── Apply selective blur ───────────────────────────────────────────────────
@@ -279,7 +410,7 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
       result.data[i + 3] = 255;
     }
     baseCtx.putImageData(result, 0, 0);
-    clearMask();
+    clearMaskLayers();
   };
 
   // ── Apply adjustments permanently ─────────────────────────────────────────
@@ -375,6 +506,27 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
     onClose();
   };
 
+  const exportHD = useCallback(() => {
+    const base = canvasRef.current;
+    const overlay = overlayCanvasRef.current;
+    if (!base || base.width === 0) return;
+    const scale = HD_EXPORT_SCALE;
+    const out = document.createElement("canvas");
+    out.width = Math.round(base.width * scale);
+    out.height = Math.round(base.height * scale);
+    const ctx = out.getContext("2d");
+    if (!ctx) return;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(base, 0, 0, out.width, out.height);
+    if (overlay && overlay.width > 0) ctx.drawImage(overlay, 0, 0, out.width, out.height);
+    const baseName = file.name.replace(/\.[^/.]+$/, "") || "image";
+    const a = document.createElement("a");
+    a.href = out.toDataURL("image/png");
+    a.download = `${baseName}-hd-${scale}x.png`;
+    a.click();
+  }, [file.name]);
+
   // ── Tool definitions ───────────────────────────────────────────────────────
   const tools: { id: Tool; label: string; icon: React.ReactNode; panel?: ActivePanel }[] = [
     { id: "brush",  label: "Brush",  panel: "blur", icon: <IconBrush /> },
@@ -430,8 +582,11 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
 
           <div className="mt-auto flex flex-col gap-1 w-full">
             <div className="sep w-full h-px mx-0 my-2" style={{ width: "100%", height: 1, background: "#1e293b" }} />
-            <button className="tool-btn" onClick={undo} disabled={!history.length} title="Undo">
+            <button className="tool-btn" onClick={undo} disabled={!canUndo} title="Undo">
               <IconUndo /> Undo
+            </button>
+            <button className="tool-btn" onClick={redo} disabled={!canRedo} title="Redo">
+              <IconRedo /> Redo
             </button>
           </div>
         </aside>
@@ -456,7 +611,17 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
             <button className="panel-btn" onClick={() => flip("v")}     title="Flip vertical">⇅ V</button>
 
             <div className="ml-auto flex items-center gap-2">
-              <button className="panel-btn" onClick={undo} disabled={!history.length}>↩ Undo</button>
+              <button className="panel-btn" onClick={undo} disabled={!canUndo} title="Undo">↩ Undo</button>
+              <button className="panel-btn" onClick={redo} disabled={!canRedo} title="Redo">↪ Redo</button>
+              <div className="sep" />
+              <button
+                type="button"
+                className="panel-btn"
+                onClick={exportHD}
+                title={`Download PNG at ${HD_EXPORT_SCALE}× resolution (high-quality smoothing)`}
+              >
+                HD Export
+              </button>
               <button
                 onClick={save}
                 className="px-4 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-white text-xs font-600 transition-colors"
@@ -694,4 +859,7 @@ function IconPan() {
 }
 function IconUndo() {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M3 13A9 9 0 1 0 5.6 6.6L3 9"/></svg>;
+}
+function IconRedo() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M21 13A9 9 0 1 1 18.4 6.6L21 9"/></svg>;
 }
