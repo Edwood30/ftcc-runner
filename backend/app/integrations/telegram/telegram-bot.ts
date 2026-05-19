@@ -168,7 +168,7 @@ export function startTelegramBot(): TelegramBot | null {
 
   bot.onText(new RegExp(`/done|${MENU_DONE}`), async (msg) => {
     const chatId = msg.chat.id;
-    const draft = getDraft(chatId);
+    const draft = getDraft(chatId); 
 
     if (draft.step !== "photos") {
       await bot.sendMessage(chatId, `Start with ${MENU_NEW_MISSION}.`);
