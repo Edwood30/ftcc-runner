@@ -20,6 +20,24 @@ const MENU_CANCEL = "Cancel";
 const MENU_HELP = "Help";
 const MENU_DONE = "Done";
 
+const MENU_TEXTS = new Set([MENU_NEW_MISSION, MENU_CANCEL, MENU_HELP, MENU_DONE]);
+const SLASH_COMMANDS = ["/start", "/help", "/cancel", "/mission", "/done"];
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isReservedBotText(text: string): boolean {
+  if (MENU_TEXTS.has(text)) {
+    return true;
+  }
+  if (!text.startsWith("/")) {
+    return false;
+  }
+  const cmd = text.split(/\s/)[0]?.split("@")[0] ?? "";
+  return SLASH_COMMANDS.includes(cmd);
+}
+
 function getDraft(chatId: number): Draft {
   let draft = sessions.get(chatId);
   if (!draft) {
@@ -82,16 +100,16 @@ export function startTelegramBot(): TelegramBot | null {
     await bot.sendMessage(msg.chat.id, "Welcome to FTCC Bot.", mainMenu);
   });
 
-  bot.onText(new RegExp(MENU_HELP), async (msg) => {
+  bot.onText(new RegExp(`^${escapeRegExp(MENU_HELP)}$`), async (msg) => {
     await bot.sendMessage(msg.chat.id, helpText(), mainMenu);
   });
 
-  bot.onText(new RegExp(`/cancel|${MENU_CANCEL}`), async (msg) => {
+  bot.onText(new RegExp(`^(/cancel|${escapeRegExp(MENU_CANCEL)})$`), async (msg) => {
     resetDraft(msg.chat.id);
     await bot.sendMessage(msg.chat.id, "Cancelled.", mainMenu);
   });
 
-  bot.onText(new RegExp(`/mission|${MENU_NEW_MISSION}`), async (msg) => {
+  bot.onText(new RegExp(`^(/mission|${escapeRegExp(MENU_NEW_MISSION)})$`), async (msg) => {
     const chatId = msg.chat.id;
     const draft = getDraft(chatId);
 
@@ -113,11 +131,23 @@ export function startTelegramBot(): TelegramBot | null {
     const text = msg.text?.trim() ?? "";
     const draft = getDraft(chatId);
 
-    if (text.startsWith("/") && text !== "/done") {
+    if (isReservedBotText(text)) {
+      return;
+    }
+
+    if (draft.step === "idle") {
+      if (msg.photo?.length) {
+        await bot.sendMessage(chatId, `Start with ${MENU_NEW_MISSION} or /mission.`);
+      }
       return;
     }
 
     try {
+      if (["what", "where", "when"].includes(draft.step) && msg.photo?.length) {
+        await bot.sendMessage(chatId, "Please send text for this step.");
+        return;
+      }
+
       if (draft.step === "what" && msg.text) {
         draft.what = text;
         draft.step = "where";
@@ -135,6 +165,12 @@ export function startTelegramBot(): TelegramBot | null {
       if (draft.step === "when" && msg.text) {
         if (!DATE_RE.test(text)) {
           await bot.sendMessage(chatId, "Invalid format. Use YYYY-MM-DD.");
+          return;
+        }
+
+        const whenDate = new Date(`${text}T12:00:00`);
+        if (Number.isNaN(whenDate.getTime())) {
+          await bot.sendMessage(chatId, "That date is not valid. Use YYYY-MM-DD.");
           return;
         }
 
@@ -157,16 +193,13 @@ export function startTelegramBot(): TelegramBot | null {
         return;
       }
 
-      if (draft.step === "photos" && msg.text && !text.startsWith("/")) {
-        await bot.sendMessage(chatId, `Send photos or press ${MENU_DONE}.`);
-      }
     } catch (error) {
       logger.error("Telegram message handler failed.", error);
       await bot.sendMessage(chatId, "Error occurred. Try again.");
     }
   });
 
-  bot.onText(new RegExp(`/done|${MENU_DONE}`), async (msg) => {
+  bot.onText(new RegExp(`^(/done|${escapeRegExp(MENU_DONE)})$`), async (msg) => {
     const chatId = msg.chat.id;
     const draft = getDraft(chatId); 
 
@@ -193,10 +226,15 @@ export function startTelegramBot(): TelegramBot | null {
       });
 
       resetDraft(chatId);
-      await bot.sendMessage(chatId, "Submitted successfully.", mainMenu);
+      await bot.sendMessage(
+        chatId,
+        "Thank you. Your mission report was received and is pending admin review.",
+        mainMenu,
+      );
     } catch (error) {
       logger.error("Telegram submission failed.", error);
-      await bot.sendMessage(chatId, "Failed to submit.");
+      const detail = error instanceof Error ? error.message : "Unknown error";
+      await bot.sendMessage(chatId, `Could not save the submission: ${detail}`);
     }
   });
 
