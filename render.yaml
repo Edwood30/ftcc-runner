@@ -1,0 +1,24 @@
+# Render Blueprint — FTCC backend API (https://ftcc-runner.onrender.com)
+services:
+  - type: web
+    name: ftcc-runner
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_BASE_URL
+        value: https://ftcc-runner.onrender.com
+      # Set in the Render dashboard (never commit secrets):
+      - key: DATABASE_URL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: FACEBOOK_PAGE_ID
+        sync: false
+      - key: FACEBOOK_PAGE_ACCESS_TOKEN
+        sync: false

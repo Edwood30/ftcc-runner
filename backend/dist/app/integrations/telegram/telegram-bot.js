@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.stopTelegramBot = stopTelegramBot;
 exports.startTelegramBot = startTelegramBot;
 const node_telegram_bot_api_1 = __importDefault(require("node-telegram-bot-api"));
 const env_js_1 = require("../../configuration/env.js");
@@ -63,13 +64,33 @@ async function downloadPhotoBuffer(bot, fileId, token) {
     }
     return Buffer.from(await response.arrayBuffer());
 }
+let activeBot = null;
+async function stopTelegramBot() {
+    if (!activeBot) {
+        return;
+    }
+    try {
+        await activeBot.stopPolling();
+    }
+    catch (error) {
+        logger_js_1.logger.error("Failed to stop Telegram polling.", error);
+    }
+    finally {
+        activeBot = null;
+    }
+}
 function startTelegramBot() {
     const token = env_js_1.env.TELEGRAM_BOT_TOKEN;
     if (!token) {
-        logger_js_1.logger.info("Telegram bot disabled.");
+        logger_js_1.logger.info("Telegram bot disabled (TELEGRAM_BOT_TOKEN not set).");
+        return null;
+    }
+    if (!env_js_1.env.TELEGRAM_ENABLE_POLLING) {
+        logger_js_1.logger.info("Telegram polling disabled. Set TELEGRAM_ENABLE_POLLING=true for local dev, or deploy on Render.");
         return null;
     }
     const bot = new node_telegram_bot_api_1.default(token, { polling: true });
+    activeBot = bot;
     const mainMenu = {
         reply_markup: {
             keyboard: [
@@ -197,6 +218,11 @@ function startTelegramBot() {
         }
     });
     bot.on("polling_error", (error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes("409 Conflict")) {
+            logger_js_1.logger.error("Telegram polling conflict: another instance is already polling this bot. Stop local dev or unset TELEGRAM_ENABLE_POLLING on Render.", error);
+            return;
+        }
         logger_js_1.logger.error("Telegram polling error.", error);
     });
     logger_js_1.logger.info("Telegram bot running.");

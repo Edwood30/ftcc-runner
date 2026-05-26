@@ -3,7 +3,7 @@ import { env } from "./configuration/env.js";
 import { connectPrisma, disconnectPrisma } from "./configuration/prisma.js";
 import { ensureDirectory } from "./helper/file.js";
 import { logger } from "./helper/logger.js";
-import { startTelegramBot } from "./integrations/telegram/telegram-bot.js";
+import { startTelegramBot, stopTelegramBot } from "./integrations/telegram/telegram-bot.js";
 
 async function bootstrap(): Promise<void> {
   await ensureDirectory(env.IMAGE_ROOT);
@@ -17,6 +17,7 @@ async function bootstrap(): Promise<void> {
 
   const shutdown = async (signal: string): Promise<void> => {
     logger.info(`Received ${signal}. Shutting down FTCC backend...`);
+    await stopTelegramBot();
     server.close(async () => {
       await disconnectPrisma();
       process.exit(0);

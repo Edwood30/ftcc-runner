@@ -21,6 +21,13 @@ exports.app.use((0, helmet_1.default)({
 exports.app.use((0, cors_1.default)());
 exports.app.use(express_1.default.json({ limit: "25mb" }));
 exports.app.use(logger_middleware_js_1.loggerMiddleware);
+exports.app.get("/", (_req, res) => {
+    res.json({
+        success: true,
+        message: "FTCC Medical Mission API",
+        data: { health: "/health", missions: "/missions" },
+    });
+});
 exports.app.get("/assets/*path", (req, res, next) => {
     try {
         const assetRoot = node_path_1.default.join(env_js_1.env.APP_ROOT, "assets");

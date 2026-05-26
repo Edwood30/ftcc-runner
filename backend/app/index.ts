@@ -20,6 +20,14 @@ app.use(cors());
 app.use(express.json({ limit: "25mb" }));
 app.use(loggerMiddleware);
 
+app.get("/", (_req, res) => {
+  res.json({
+    success: true,
+    message: "FTCC Medical Mission API",
+    data: { health: "/health", missions: "/missions" },
+  });
+});
+
 app.get("/assets/*path", (req, res, next) => {
   try {
     const assetRoot = path.join(env.APP_ROOT, "assets");

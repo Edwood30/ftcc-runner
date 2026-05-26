@@ -16,6 +16,7 @@ async function bootstrap() {
     });
     const shutdown = async (signal) => {
         logger_js_1.logger.info(`Received ${signal}. Shutting down FTCC backend...`);
+        await (0, telegram_bot_js_1.stopTelegramBot)();
         server.close(async () => {
             await (0, prisma_js_1.disconnectPrisma)();
             process.exit(0);

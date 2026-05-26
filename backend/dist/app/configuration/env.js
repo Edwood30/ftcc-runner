@@ -65,6 +65,12 @@ exports.env = {
     FACEBOOK_GRAPH_VERSION: process.env.FACEBOOK_GRAPH_VERSION ?? "v23.0",
     FACEBOOK_PAGE_ID: process.env.FACEBOOK_PAGE_ID ?? "",
     FACEBOOK_PAGE_ACCESS_TOKEN: process.env.FACEBOOK_PAGE_ACCESS_TOKEN ?? "",
-    /** Optional. When set, the Telegram bot starts (long polling) and creates pending submissions. */
+    /** Optional. When set, the Telegram bot can create pending submissions. */
     TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN?.trim() ?? "",
+    /**
+     * Long-polling is enabled on Render by default (RENDER=true).
+     * Set TELEGRAM_ENABLE_POLLING=true locally only when Render is not also polling.
+     */
+    TELEGRAM_ENABLE_POLLING: process.env.TELEGRAM_ENABLE_POLLING === "true" ||
+        (process.env.TELEGRAM_ENABLE_POLLING !== "false" && process.env.RENDER === "true"),
 };

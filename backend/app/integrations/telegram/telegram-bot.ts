@@ -78,14 +78,35 @@ async function downloadPhotoBuffer(bot: TelegramBot, fileId: string, token: stri
   return Buffer.from(await response.arrayBuffer());
 }
 
+let activeBot: TelegramBot | null = null;
+
+export async function stopTelegramBot(): Promise<void> {
+  if (!activeBot) {
+    return;
+  }
+  try {
+    await activeBot.stopPolling();
+  } catch (error) {
+    logger.error("Failed to stop Telegram polling.", error);
+  } finally {
+    activeBot = null;
+  }
+}
+
 export function startTelegramBot(): TelegramBot | null {
   const token = env.TELEGRAM_BOT_TOKEN;
   if (!token) {
-    logger.info("Telegram bot disabled.");
+    logger.info("Telegram bot disabled (TELEGRAM_BOT_TOKEN not set).");
+    return null;
+  }
+
+  if (!env.TELEGRAM_ENABLE_POLLING) {
+    logger.info("Telegram polling disabled. Set TELEGRAM_ENABLE_POLLING=true for local dev, or deploy on Render.");
     return null;
   }
 
   const bot = new TelegramBot(token, { polling: true });
+  activeBot = bot;
   const mainMenu: TelegramBot.SendMessageOptions = {
     reply_markup: {
       keyboard: [
@@ -239,6 +260,14 @@ export function startTelegramBot(): TelegramBot | null {
   });
 
   bot.on("polling_error", (error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("409 Conflict")) {
+      logger.error(
+        "Telegram polling conflict: another instance is already polling this bot. Stop local dev or unset TELEGRAM_ENABLE_POLLING on Render.",
+        error,
+      );
+      return;
+    }
     logger.error("Telegram polling error.", error);
   });
 
