@@ -13,6 +13,10 @@ services:
         value: production
       - key: APP_BASE_URL
         value: https://ftcc-runner.onrender.com
+      # Comma-separated frontend origins, for example:
+      # https://your-frontend.vercel.app,https://your-project.web.app
+      - key: CORS_ORIGINS
+        sync: false
       # Set in the Render dashboard (never commit secrets):
       - key: DATABASE_URL
         sync: false

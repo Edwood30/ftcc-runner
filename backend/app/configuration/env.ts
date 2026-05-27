@@ -57,6 +57,10 @@ export const env = {
   PORT: Number(process.env.PORT ?? 5000),
   DATABASE_URL: getRequiredMongoUrl(),
   APP_BASE_URL: process.env.APP_BASE_URL ?? "http://localhost:5000",
+  CORS_ORIGINS: (process.env.CORS_ORIGINS ?? process.env.FRONTEND_ORIGIN ?? "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
+    .filter(Boolean),
   APP_ROOT: appRoot,
   IMAGE_ROOT: process.env.IMAGE_ROOT ?? path.join(appRoot, "assets", "images"),
   FILE_ROOT: process.env.FILE_ROOT ?? path.join(appRoot, "assets", "files"),

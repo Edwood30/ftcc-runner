@@ -1,4 +1,5 @@
 import cors from "cors";
+import type { CorsOptions } from "cors";
 import express from "express";
 import helmet from "helmet";
 import path from "node:path";
@@ -11,12 +12,42 @@ import { submissionRouter } from "./modules/submission/submission.router.js";
 
 export const app = express();
 
+const defaultAllowedOriginPatterns = [
+  /^https:\/\/[\w-]+\.vercel\.app$/,
+  /^https:\/\/[\w-]+\.web\.app$/,
+  /^https:\/\/[\w-]+\.firebaseapp\.com$/,
+];
+
+const localAllowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"];
+
+function isAllowedOrigin(origin: string): boolean {
+  const normalizedOrigin = origin.replace(/\/+$/, "");
+  return (
+    env.CORS_ORIGINS.includes(normalizedOrigin) ||
+    (env.NODE_ENV !== "production" && localAllowedOrigins.includes(normalizedOrigin)) ||
+    defaultAllowedOriginPatterns.some((pattern) => pattern.test(normalizedOrigin))
+  );
+}
+
+const corsOptions: CorsOptions = {
+  origin(origin, callback) {
+    if (!origin || isAllowedOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`Origin ${origin} is not allowed by CORS.`));
+  },
+  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-User-Role"],
+};
+
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
   }),
 );
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "25mb" }));
 app.use(loggerMiddleware);
 
