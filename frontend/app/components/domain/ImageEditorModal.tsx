@@ -10,22 +10,29 @@ interface ImageEditorModalProps {
   onClose: () => void;
 }
 
-type Tool = "brush" | "eraser" | "pan";
+type Tool = "brush" | "eraser" | "pan" | "crop";
 
 const DEFAULT_BRUSH_SIZE = 40;
 const DEFAULT_BLUR_STRENGTH = 10;
+const CROP_OUTPUT = { width: 3750, height: 1969 };
+const CROP_ASPECT = CROP_OUTPUT.width / CROP_OUTPUT.height;
 
 export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: ImageEditorModalProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const templateOverlayRef = useRef<HTMLImageElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const panStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  const cropDragStartRef = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   const [sourceDataURL, setSourceDataURL] = useState(initialDataURL ?? "");
-  const [tool, setTool] = useState<Tool>("brush");
+  const [tool, setTool] = useState<Tool>("crop");
   const [brushSize, setBrushSize] = useState(DEFAULT_BRUSH_SIZE);
   const [blurStrength, setBlurStrength] = useState(DEFAULT_BLUR_STRENGTH);
+  const [cropBaseDataURL, setCropBaseDataURL] = useState(initialDataURL ?? "");
+  const [cropZoom, setCropZoom] = useState(100);
+  const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
   const [isPainting, setIsPainting] = useState(false);
   const [hasMask, setHasMask] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -39,10 +46,26 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
     }
 
     const reader = new FileReader();
-    reader.onload = () => setSourceDataURL(String(reader.result ?? ""));
+    reader.onload = () => {
+      const dataURL = String(reader.result ?? "");
+      setSourceDataURL(dataURL);
+      setCropBaseDataURL(dataURL);
+    };
     reader.onerror = () => setError("Unable to load this image.");
     reader.readAsDataURL(file);
   }, [file, initialDataURL]);
+
+  useEffect(() => {
+    const image = new Image();
+    image.onload = () => {
+      templateOverlayRef.current = image;
+      const overlayCanvas = overlayCanvasRef.current;
+      if (overlayCanvas && tool === "crop") {
+        drawTemplateOverlay(overlayCanvas, image);
+      }
+    };
+    image.src = "/FTCC Overlay.png";
+  }, [tool]);
 
   const clearMaskLayers = useCallback(() => {
     [maskCanvasRef.current, overlayCanvasRef.current].forEach((canvas) => {
@@ -77,9 +100,70 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
     image.src = dataURL;
   }, [clearMaskLayers]);
 
+  const renderSmartCrop = useCallback((dataURL: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !dataURL) {
+      return;
+    }
+
+    const image = new Image();
+    image.onload = () => {
+      const outputWidth = CROP_OUTPUT.width;
+      const outputHeight = Math.round(outputWidth / CROP_ASPECT);
+      canvas.width = outputWidth;
+      canvas.height = outputHeight;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        return;
+      }
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, outputWidth, outputHeight);
+
+      const baseScale = Math.max(outputWidth / image.width, outputHeight / image.height);
+      const scale = baseScale * (cropZoom / 100);
+      const drawWidth = image.width * scale;
+      const drawHeight = image.height * scale;
+      const maxOffsetX = Math.max(0, (drawWidth - outputWidth) / 2);
+      const maxOffsetY = Math.max(0, (drawHeight - outputHeight) / 2);
+      const dx = (outputWidth - drawWidth) / 2 + (cropOffset.x / 100) * maxOffsetX;
+      const dy = (outputHeight - drawHeight) / 2 + (cropOffset.y / 100) * maxOffsetY;
+
+      ctx.drawImage(image, dx, dy, drawWidth, drawHeight);
+
+      [maskCanvasRef.current, overlayCanvasRef.current].forEach((layer) => {
+        if (!layer) {
+          return;
+        }
+        layer.width = outputWidth;
+        layer.height = outputHeight;
+      });
+
+      maskCanvasRef.current?.getContext("2d")?.clearRect(0, 0, outputWidth, outputHeight);
+      const overlayCanvas = overlayCanvasRef.current;
+      if (overlayCanvas) {
+        const overlayImage = templateOverlayRef.current;
+        if (overlayImage) {
+          drawTemplateOverlay(overlayCanvas, overlayImage);
+        } else {
+          drawCropGuide(overlayCanvas);
+        }
+      }
+      setHasMask(false);
+    };
+    image.onerror = () => setError("Unable to render this crop.");
+    image.src = dataURL;
+  }, [cropOffset.x, cropOffset.y, cropZoom]);
+
   useEffect(() => {
+    if (cropBaseDataURL && tool === "crop") {
+      renderSmartCrop(cropBaseDataURL);
+      return;
+    }
+
     drawImage(sourceDataURL);
-  }, [drawImage, sourceDataURL]);
+  }, [cropBaseDataURL, drawImage, renderSmartCrop, sourceDataURL, tool]);
 
   const getPoint = (event: PointerEvent<HTMLCanvasElement>) => {
     const canvas = overlayCanvasRef.current;
@@ -218,9 +302,72 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
     setSourceDataURL(canvas.toDataURL("image/png"));
   };
 
+  const startSmartCrop = () => {
+    setCropBaseDataURL(sourceDataURL);
+    setCropZoom(100);
+    setCropOffset({ x: 0, y: 0 });
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+    setTool("crop");
+  };
+
+  const applySmartCrop = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !cropBaseDataURL) {
+      return;
+    }
+
+    setSourceDataURL(canvas.toDataURL("image/jpeg", 0.95));
+    setCropBaseDataURL("");
+    setTool("pan");
+  };
+
+  const setCropZoomClamped = (nextZoom: number) => {
+    setCropZoom(Math.min(250, Math.max(100, nextZoom)));
+  };
+
+  const startCropDrag = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (tool !== "crop" || !cropBaseDataURL) {
+      return;
+    }
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    cropDragStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      offsetX: cropOffset.x,
+      offsetY: cropOffset.y,
+    };
+  };
+
+  const moveCropDrag = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (tool !== "crop" || !cropBaseDataURL || !cropDragStartRef.current) {
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const start = cropDragStartRef.current;
+    const x = start.offsetX + ((event.clientX - start.x) / rect.width) * 200;
+    const y = start.offsetY + ((event.clientY - start.y) / rect.height) * 200;
+    setCropOffset({
+      x: Math.min(100, Math.max(-100, x)),
+      y: Math.min(100, Math.max(-100, y)),
+    });
+  };
+
+  const stopCropDrag = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    cropDragStartRef.current = null;
+  };
+
   const resetImage = () => {
     setBrushSize(DEFAULT_BRUSH_SIZE);
     setBlurStrength(DEFAULT_BLUR_STRENGTH);
+    setCropBaseDataURL("");
+    setCropZoom(100);
+    setCropOffset({ x: 0, y: 0 });
     setZoom(1);
     setPan({ x: 0, y: 0 });
     drawImage(sourceDataURL);
@@ -263,6 +410,9 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
             <p className="truncate text-xs text-slate-400">{file.name}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="secondary" disabled={tool !== "crop"} onClick={() => setCropZoomClamped(cropZoom - 10)}>-</Button>
+            <Button type="button" variant="secondary" disabled={tool !== "crop"} onClick={() => setCropZoomClamped(cropZoom + 10)}>+</Button>
+            <Button type="button" variant="secondary" disabled={!cropBaseDataURL || tool !== "crop"} onClick={applySmartCrop}>Apply Crop</Button>
             <Button type="button" variant="secondary" onClick={resetImage}>Reset</Button>
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
             <Button type="button" variant="primary" onClick={saveImage}>Save</Button>
@@ -272,11 +422,17 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
         <div className="grid min-h-0 flex-1 md:grid-cols-[1fr_280px]">
           <section
             ref={viewportRef}
-            className={`relative min-h-[420px] overflow-hidden bg-slate-900 ${tool === "pan" ? "cursor-grab active:cursor-grabbing" : "cursor-none"}`}
+            className={`relative min-h-[420px] overflow-hidden bg-slate-900 ${tool === "pan" || tool === "crop" ? "cursor-grab active:cursor-grabbing" : "cursor-none"}`}
             onPointerDown={startPan}
             onPointerMove={movePan}
             onPointerUp={() => { panStartRef.current = null; }}
-            onWheel={(event) => setZoom((current) => Math.min(4, Math.max(0.25, current - event.deltaY * 0.001)))}
+            onWheel={(event) => {
+              if (tool === "crop") {
+                setCropZoomClamped(cropZoom - event.deltaY * 0.05);
+                return;
+              }
+              setZoom((current) => Math.min(4, Math.max(0.25, current - event.deltaY * 0.001)));
+            }}
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle,#1e293b_1px,transparent_1px)] [background-size:24px_24px]" />
             <div className="absolute inset-0 flex items-center justify-center" style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}>
@@ -286,15 +442,40 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
                 <canvas
                   ref={overlayCanvasRef}
                   className="absolute inset-0 touch-none"
-                  onPointerDown={startPainting}
-                  onPointerMove={paintMask}
-                  onPointerUp={stopPainting}
-                  onPointerCancel={stopPainting}
+                  onPointerDown={(event) => {
+                    if (tool === "crop") {
+                      startCropDrag(event);
+                      return;
+                    }
+                    startPainting(event);
+                  }}
+                  onPointerMove={(event) => {
+                    if (tool === "crop") {
+                      moveCropDrag(event);
+                      return;
+                    }
+                    paintMask(event);
+                  }}
+                  onPointerUp={(event) => {
+                    if (tool === "crop") {
+                      stopCropDrag(event);
+                      return;
+                    }
+                    stopPainting(event);
+                  }}
+                  onPointerCancel={(event) => {
+                    if (tool === "crop") {
+                      stopCropDrag(event);
+                      return;
+                    }
+                    stopPainting(event);
+                  }}
                   onPointerEnter={updateBrushCursor}
                   onPointerLeave={() => {
                     setCursor((current) => ({ ...current, visible: false }));
                     setIsPainting(false);
                     lastPointRef.current = null;
+                    cropDragStartRef.current = null;
                   }}
                 />
               </div>
@@ -313,17 +494,52 @@ export function ImageEditorModal({ file, initialDataURL, onSave, onClose }: Imag
                 }}
               />
             )}
+            {tool === "crop" && cropBaseDataURL && (
+              <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-2 px-4">
+                <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 shadow-2xl backdrop-blur">
+                  <Button type="button" variant="secondary" onClick={() => setCropZoomClamped(cropZoom - 10)}>-</Button>
+                  <span className="min-w-14 text-center text-xs font-semibold tabular-nums text-slate-200">{Math.round(cropZoom)}%</span>
+                  <Button type="button" variant="secondary" onClick={() => setCropZoomClamped(cropZoom + 10)}>+</Button>
+                  <Button type="button" variant="primary" onClick={applySmartCrop}>Apply Crop</Button>
+                </div>
+              </div>
+            )}
           </section>
 
           <aside className="space-y-6 overflow-y-auto border-t border-slate-800 bg-slate-950 p-4 md:border-l md:border-t-0">
             {error && <p className="rounded-md border border-red-400/30 bg-red-950/50 px-3 py-2 text-sm text-red-100">{error}</p>}
 
             <ControlGroup title="Tool">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <ToolButton active={tool === "brush"} onClick={() => setTool("brush")}>Brush</ToolButton>
                 <ToolButton active={tool === "eraser"} onClick={() => setTool("eraser")}>Eraser</ToolButton>
                 <ToolButton active={tool === "pan"} onClick={() => setTool("pan")}>Pan</ToolButton>
+                <ToolButton active={tool === "crop"} onClick={startSmartCrop}>Crop</ToolButton>
               </div>
+            </ControlGroup>
+
+            <ControlGroup title="Smart Crop">
+              <Button type="button" variant="primary" className="w-full" onClick={startSmartCrop}>Smart Crop</Button>
+              {cropBaseDataURL && tool === "crop" && (
+                <>
+                  <RangeSlider label="Zoom" value={cropZoom} min={100} max={250} unit="%" onChange={setCropZoomClamped} />
+                  <RangeSlider label="Horizontal Align" value={cropOffset.x} min={-100} max={100} unit="" onChange={(value) => setCropOffset((current) => ({ ...current, x: value }))} />
+                  <RangeSlider label="Vertical Align" value={cropOffset.y} min={-100} max={100} unit="" onChange={(value) => setCropOffset((current) => ({ ...current, y: value }))} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button type="button" variant="primary" onClick={applySmartCrop}>Apply Crop</Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setCropBaseDataURL("");
+                        setTool("pan");
+                      }}
+                    >
+                      Cancel Crop
+                    </Button>
+                  </div>
+                </>
+              )}
             </ControlGroup>
 
             <ControlGroup title="Gaussian Blur">
@@ -402,4 +618,29 @@ function maskHasPaint(canvas: HTMLCanvasElement): boolean {
     }
   }
   return false;
+}
+
+function drawTemplateOverlay(canvas: HTMLCanvasElement, image: HTMLImageElement) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return;
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  drawCropGuide(canvas);
+}
+
+function drawCropGuide(canvas: HTMLCanvasElement) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return;
+  }
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.82)";
+  ctx.lineWidth = Math.max(6, canvas.width * 0.002);
+  ctx.setLineDash([Math.max(20, canvas.width * 0.012), Math.max(14, canvas.width * 0.008)]);
+  ctx.strokeRect(ctx.lineWidth / 2, ctx.lineWidth / 2, canvas.width - ctx.lineWidth, canvas.height - ctx.lineWidth);
+  ctx.restore();
 }
