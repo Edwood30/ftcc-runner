@@ -12,7 +12,6 @@ export interface ProcessedImage {
 export interface UploadConstraints {
   maxFiles: number;
   maxFileSizeBytes: number;
-  minDimension: number;
 }
 
 export interface MissionHistoryItem {

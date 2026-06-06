@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { FRAME_CONFIG, UPLOAD_CONSTRAINTS } from "../configuration/constants";
 import type { InboxSubmissionItem, MissionFormState, ProcessedImage } from "../types/mission";
-import { processImage, readImageDimensions } from "../utils/image";
+import { processImage } from "../utils/image";
 import { buildOverlaySVG, loadOverlayImage, svgToImage } from "../utils/overlay";
 import { generateCaption } from "../utils/caption";
 
@@ -31,16 +31,6 @@ export function useMissionGenerator(editedImages: Record<string, string>) {
       }
       if (file.size > UPLOAD_CONSTRAINTS.maxFileSizeBytes) {
         issues.push(`${file.name}: exceeds 15MB limit.`);
-        continue;
-      }
-      try {
-        const { width, height } = await readImageDimensions(file);
-        if (width < UPLOAD_CONSTRAINTS.minDimension || height < UPLOAD_CONSTRAINTS.minDimension) {
-          issues.push(`${file.name}: low resolution (${width}x${height}).`);
-          continue;
-        }
-      } catch {
-        issues.push(`${file.name}: could not be read.`);
         continue;
       }
       valid.push(file);

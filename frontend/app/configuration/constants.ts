@@ -8,5 +8,4 @@ export const FRAME_CONFIG = {
 export const UPLOAD_CONSTRAINTS: UploadConstraints = {
   maxFiles: 50,
   maxFileSizeBytes: 15 * 1024 * 1024,
-  minDimension: 900,
 };
