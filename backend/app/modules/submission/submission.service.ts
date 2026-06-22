@@ -1,6 +1,6 @@
 import type { MissionSubmission } from "@prisma/client";
 import { env } from "../../configuration/env.js";
-import { generateCaptionFromFields } from "../../helper/caption.js";
+import { DEFAULT_MISSION_SERVICES, generateCaptionFromFields } from "../../helper/caption.js";
 import { buildPendingSubmissionFolder, saveMissionImageBuffers } from "../../helper/file.js";
 import { publishMissionToFacebook } from "../../helper/facebook.js";
 import { missionRepository } from "../mission/mission.repository.js";
@@ -31,7 +31,13 @@ export class SubmissionService {
     }
     const folder = buildPendingSubmissionFolder(input.where, input.when);
     const images = await saveMissionImageBuffers(folder, input.photoBuffers);
-    const caption = generateCaptionFromFields(input.what, input.where, input.when);
+    const caption = generateCaptionFromFields(
+      input.what,
+      input.where,
+      input.when,
+      "after",
+      [...DEFAULT_MISSION_SERVICES],
+    );
     return submissionRepository.create({
       what: input.what,
       where: input.where,
@@ -73,7 +79,7 @@ export class SubmissionService {
       data.caption === undefined &&
       (data.what !== undefined || data.where !== undefined || data.when !== undefined)
     ) {
-      merged.caption = generateCaptionFromFields(what, where, when);
+      merged.caption = generateCaptionFromFields(what, where, when, "after", [...DEFAULT_MISSION_SERVICES]);
     }
     const updated = await submissionRepository.updateById(id, merged);
     if (!updated) {

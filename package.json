@@ -1,0 +1,14 @@
+{
+  "name": "ftcc-runner",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n db,backend,frontend -c blue,green,yellow \"npm run dev:db\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:db": "docker compose up -d",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "postinstall": "npm install --prefix backend && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
