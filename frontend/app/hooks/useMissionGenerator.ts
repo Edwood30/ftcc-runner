@@ -1,12 +1,27 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { FRAME_CONFIG, UPLOAD_CONSTRAINTS } from "../configuration/constants";
-import type { InboxSubmissionItem, MissionFormState, ProcessedImage } from "../types/mission";
+import { DEFAULT_MISSION_SERVICES, FRAME_CONFIG, UPLOAD_CONSTRAINTS } from "../configuration/constants";
+import type { InboxSubmissionItem, MissionFormState, MissionType, PostPhase, ProcessedImage } from "../types/mission";
+import { generateCaption } from "../utils/caption";
 import { processImage } from "../utils/image";
 import { buildOverlaySVG, loadOverlayImage, svgToImage } from "../utils/overlay";
-import { generateCaption } from "../utils/caption";
+
+const DEFAULT_FORM: MissionFormState = {
+  what: "",
+  where: "",
+  when: "",
+  postPhase: "after",
+  services: [...DEFAULT_MISSION_SERVICES],
+};
+
+function mapSubmissionMissionType(what: string): MissionType | "" {
+  const normalized = what.trim().toLowerCase();
+  if (normalized === "yakap caravan") return "YAKAP Caravan";
+  if (normalized === "aftercare program") return "AFTERCARE PROGRAM";
+  return "";
+}
 
 export function useMissionGenerator(editedImages: Record<string, string>) {
-  const [form, setForm] = useState<MissionFormState>({ what: "", where: "", when: "" });
+  const [form, setForm] = useState<MissionFormState>({ ...DEFAULT_FORM });
   const [files, setFiles] = useState<File[]>([]);
   const [uploadIssues, setUploadIssues] = useState<string[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
@@ -17,7 +32,19 @@ export function useMissionGenerator(editedImages: Record<string, string>) {
   const [appError, setAppError] = useState("");
   const cancelRequestedRef = useRef(false);
 
-  const setField = (name: keyof MissionFormState, value: string) => setForm((prev) => ({ ...prev, [name]: value }));
+  const setField = (name: "where" | "when", value: string) => setForm((prev) => ({ ...prev, [name]: value }));
+
+  const setMissionType = (what: MissionType) => setForm((prev) => ({ ...prev, what }));
+
+  const setPostPhase = (postPhase: PostPhase) => setForm((prev) => ({ ...prev, postPhase }));
+
+  const toggleService = (service: string) =>
+    setForm((prev) => ({
+      ...prev,
+      services: prev.services.includes(service)
+        ? prev.services.filter((item) => item !== service)
+        : [...prev.services, service],
+    }));
 
   const handleFiles = async (incoming: FileList | null) => {
     if (!incoming?.length) return;
@@ -89,6 +116,8 @@ export function useMissionGenerator(editedImages: Record<string, string>) {
     setFiles(previousFiles);
   };
 
+  const resetForm = () => setForm({ ...DEFAULT_FORM });
+
   const clearAll = () => {
     setFiles([]);
     setUploadIssues([]);
@@ -97,6 +126,7 @@ export function useMissionGenerator(editedImages: Record<string, string>) {
     setProcessedImages([]);
     setAppError("");
     setProgress(0);
+    resetForm();
   };
 
   const removeFile = (index: number) => setFiles((prev) => prev.filter((_, i) => i !== index));
@@ -119,9 +149,11 @@ export function useMissionGenerator(editedImages: Record<string, string>) {
         ? submission.when.slice(0, 10)
         : new Date(submission.when).toISOString().slice(0, 10);
     setForm({
-      what: submission.what,
+      what: mapSubmissionMissionType(submission.what),
       where: submission.where,
       when: whenStr,
+      postPhase: "after",
+      services: [...DEFAULT_MISSION_SERVICES],
     });
     const base = assetBaseUrl.replace(/\/$/, "");
     const rawFiles: File[] = [];
@@ -130,7 +162,7 @@ export function useMissionGenerator(editedImages: Record<string, string>) {
       const url = `${base}/${rel}`;
       const res = await fetch(url);
       if (!res.ok) {
-        setForm({ what: "", where: "", when: "" });
+        resetForm();
         setFiles([]);
         throw new Error(`Could not load image ${i + 1} from the server.`);
       }
@@ -154,7 +186,7 @@ export function useMissionGenerator(editedImages: Record<string, string>) {
       valid.push(file);
     }
     if (!valid.length) {
-      setForm({ what: "", where: "", when: "" });
+      resetForm();
       setFiles([]);
       throw new Error("No valid images could be loaded from this submission.");
     }
@@ -163,7 +195,9 @@ export function useMissionGenerator(editedImages: Record<string, string>) {
   }, []);
 
   const caption = useMemo(() => generateCaption(form), [form]);
-  const canGenerate = Boolean(form.what && form.where && form.when && files.length > 0 && !isProcessing);
+  const canGenerate = Boolean(
+    form.what && form.where && form.when && form.services.length > 0 && files.length > 0 && !isProcessing,
+  );
 
   return {
     form,
@@ -178,6 +212,10 @@ export function useMissionGenerator(editedImages: Record<string, string>) {
     caption,
     canGenerate,
     setField,
+    setMissionType,
+    setPostPhase,
+    toggleService,
+    resetForm,
     handleFiles,
     removeFile,
     generate,

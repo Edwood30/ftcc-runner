@@ -1,7 +1,12 @@
+export type MissionType = "YAKAP Caravan" | "AFTERCARE PROGRAM";
+export type PostPhase = "during" | "after";
+
 export interface MissionFormState {
-  what: string;
+  what: MissionType | "";
   where: string;
   when: string;
+  postPhase: PostPhase;
+  services: string[];
 }
 
 export interface ProcessedImage {

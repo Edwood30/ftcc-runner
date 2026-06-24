@@ -57,3 +57,60 @@ The app is organized as a React frontend and an Express/Prisma backend. The fron
 - Database: MongoDB through Prisma
 - Integrations: Facebook Graph API, Telegram Bot API
 - File handling: local image storage and ZIP generation
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 20+
+- Docker Desktop (for local MongoDB)
+
+### First-time setup
+
+1. **Backend** — if you already have `backend/.env` with your MongoDB and API secrets, keep it as-is (it is gitignored and will not be changed by pulls). For a new machine only, copy `backend/.env.example` to `backend/.env` and fill in your `DATABASE_URL`.
+2. **Frontend (local dev only)** — production builds use `frontend/.env` (Render API). To point the Vite dev server at your local backend, create `frontend/.env.local` (gitignored):
+
+```env
+VITE_API_BASE_URL=http://localhost:5000
+```
+
+3. Install dependencies and generate the Prisma client:
+
+```bash
+npm install
+cd backend && npx prisma generate
+```
+
+3. Start MongoDB:
+
+```bash
+docker compose up -d
+```
+
+### Daily dev
+
+From the repo root:
+
+```bash
+npm run dev
+```
+
+This starts MongoDB (if not already running), the backend on `http://localhost:5000`, and the frontend on `http://localhost:5173`.
+
+You can also run services separately:
+
+```bash
+npm run dev:db        # MongoDB only
+npm run dev:backend   # API only
+npm run dev:frontend  # Vite dev server only
+```
+
+### Verify
+
+- API health: `http://localhost:5000/health`
+- Frontend: `http://localhost:5173`
+
+### Optional integrations
+
+- **Facebook**: Publishing is skipped on localhost because `APP_BASE_URL` must be a public URL. Configure `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_ACCESS_TOKEN` only when deploying.
+- **Telegram**: Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ENABLE_POLLING=true` in `backend/.env`. Do not run local polling while the Render deployment is also polling the same bot (causes 409 conflicts).

@@ -227,6 +227,9 @@ export function DashboardPage() {
           appError={mission.appError}
           failedCount={mission.failedFiles.length}
           setField={mission.setField}
+          setMissionType={mission.setMissionType}
+          setPostPhase={mission.setPostPhase}
+          toggleService={mission.toggleService}
           handleFiles={mission.handleFiles}
           removeFile={mission.removeFile}
           clearAll={handleClear}
