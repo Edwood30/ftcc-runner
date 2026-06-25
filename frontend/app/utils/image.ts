@@ -16,7 +16,10 @@ function sourceToImage(source: File | string): Promise<HTMLImageElement> {
   if (typeof source === "string") {
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.crossOrigin = "anonymous";
+      // Only set crossOrigin for non-dataURL sources to avoid CORS issues with dataURLs
+      if (!source.startsWith("data:")) {
+        img.crossOrigin = "anonymous";
+      }
       img.onload = () => resolve(img);
       img.onerror = reject;
       img.src = source;
