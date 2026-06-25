@@ -2,6 +2,7 @@ export function fileToImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.onload = () => {
       URL.revokeObjectURL(url);
       resolve(img);
@@ -15,6 +16,7 @@ function sourceToImage(source: File | string): Promise<HTMLImageElement> {
   if (typeof source === "string") {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      img.crossOrigin = "anonymous";
       img.onload = () => resolve(img);
       img.onerror = reject;
       img.src = source;
@@ -54,7 +56,12 @@ export async function processImage(
   }
 
   ctx.drawImage(userImg, sx, sy, sw, sh, x, y, width, height);
-  ctx.drawImage(overlayImg, 0, 0, canvasWidth, canvasHeight);
+  
+  // Scale overlay to match canvas dimensions
+  if (overlayImg && overlayImg.width > 0 && overlayImg.height > 0) {
+    ctx.drawImage(overlayImg, 0, 0, canvasWidth, canvasHeight);
+  }
+  
   return canvas.toDataURL("image/jpeg", 0.88);
 }
 
@@ -62,6 +69,7 @@ export function readImageDimensions(file: File): Promise<{ width: number; height
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.onload = () => {
       resolve({ width: img.width, height: img.height });
       URL.revokeObjectURL(url);
