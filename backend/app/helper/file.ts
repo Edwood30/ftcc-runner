@@ -34,7 +34,7 @@ export async function saveMissionImages(folder: string, images: string[]): Promi
     const fileName = `image_${index + 1}.jpg`;
     const filePath = path.join(folderPath, fileName);
     await fs.writeFile(filePath, parseBase64Image(images[index]));
-    imagePaths.push(path.join("assets", "images", folder, fileName).replace(/\\/g, "/"));
+    imagePaths.push(path.join("images", folder, fileName).replace(/\\/g, "/"));
   }
 
   return imagePaths;
@@ -53,7 +53,7 @@ export async function saveMissionImageBuffers(folder: string, buffers: Buffer[])
     const fileName = `image_${index + 1}.jpg`;
     const filePath = path.join(folderPath, fileName);
     await fs.writeFile(filePath, buffers[index]!);
-    imagePaths.push(path.join("assets", "images", folder, fileName).replace(/\\/g, "/"));
+    imagePaths.push(path.join("images", folder, fileName).replace(/\\/g, "/"));
   }
   return imagePaths;
 }

@@ -85,7 +85,7 @@ export function AppHeader({ inbox }: AppHeaderProps) {
                       
                     </p>
                     <p className="text-xs text-[#648197] dark:text-slate-400">
-                      <a href="https://t.me/ftcc_runner_bot" target="_blank" rel="noopener noreferrer" className="text-[#2FA4C8]">@ftcc_runner_bot</a>
+                      <a href="https://web.telegram.org/#/im?p=@ftcc_runner_bot" target="_blank" rel="noopener noreferrer" className="text-[#2FA4C8]">@ftcc_runner_bot</a>
                       <br />
                       <br />
                       Open in mission editor to adjust images, then save to history.

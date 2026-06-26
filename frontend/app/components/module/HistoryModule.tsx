@@ -139,7 +139,7 @@ export function HistoryModule({
             <p className="line-clamp-3 text-sm leading-6 text-[#506B7E] dark:text-slate-300">{mission.caption}</p>
             <div className="mt-4 grid grid-cols-3 gap-2">
               {mission.images.slice(0, 3).map((imagePath) => (
-                <img key={imagePath} src={`${assetBaseUrl}/${imagePath}`} alt={mission.what} className="aspect-square rounded-[18px] object-cover shadow-sm" />
+                <img key={imagePath} src={`${assetBaseUrl}/assets/${imagePath}`} alt={mission.what} className="aspect-square rounded-[18px] object-cover shadow-sm" />
               ))}
             </div>
             <div className="mt-4 flex flex-wrap gap-2">

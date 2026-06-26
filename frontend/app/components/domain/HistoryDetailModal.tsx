@@ -30,7 +30,7 @@ export function HistoryDetailModal({ mission, assetBaseUrl, onClose }: HistoryDe
 
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           {mission.images.map((imagePath) => (
-            <img key={imagePath} src={`${assetBaseUrl}/${imagePath}`} alt={mission.what} className="w-full rounded-[22px] border border-[#1F5F8B]/10 object-cover shadow-sm" />
+            <img key={imagePath} src={`${assetBaseUrl}/assets/${imagePath}`} alt={mission.what} className="w-full rounded-[22px] border border-[#1F5F8B]/10 object-cover shadow-sm" />
           ))}
         </div>
       </div>
