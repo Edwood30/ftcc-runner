@@ -104,6 +104,7 @@ body {
   display: grid;
   min-height: 100vh;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  transition: grid-template-columns 360ms ease;
 }
 
 .landing-panel {
@@ -111,6 +112,9 @@ body {
   min-height: 100vh;
   place-items: center;
   padding: clamp(2rem, 5vw, 5.5rem);
+  transition:
+    filter 260ms ease,
+    transform 260ms ease;
 }
 
 .landing-panel-ftcc {
@@ -131,6 +135,7 @@ body {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  transition: transform 300ms ease;
 }
 
 .landing-logo-frame {
@@ -335,6 +340,29 @@ body {
   color: #0d4b22;
 }
 
+
+
+@media (hover: hover) and (pointer: fine) and (min-width: 821px) {
+  .landing-options:has(.landing-panel-ftcc:hover),
+  .landing-options:has(.landing-panel-ftcc:focus-within) {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  }
+
+  .landing-options:has(.landing-panel-rgmed:hover),
+  .landing-options:has(.landing-panel-rgmed:focus-within) {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  }
+
+  .landing-panel:hover,
+  .landing-panel:focus-within {
+    filter: brightness(1.04);
+  }
+
+  .landing-panel:hover .landing-content,
+  .landing-panel:focus-within .landing-content {
+    transform: translateY(-0.35rem) scale(1.025);
+  }
+}
 @media (max-width: 820px) {
   .landing-options {
     grid-template-columns: 1fr;
