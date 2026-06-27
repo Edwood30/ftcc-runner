@@ -578,3 +578,389 @@ main.mx-auto.grid {
     flex: 1 1 10rem;
   }
 }
+
+
+.mission-choice {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  min-height: 3.25rem;
+  width: 100%;
+}
+
+.mission-choice input {
+  flex: 0 0 auto;
+  width: 1rem !important;
+  min-width: 1rem !important;
+  margin: 0;
+}
+
+.mission-choice-text {
+  display: block;
+  min-width: 0;
+  flex: 1 1 auto;
+  line-height: 1.35;
+  text-align: left;
+}
+
+
+/* RG-Med pharmacy system */
+.rgmed-system {
+  background: #f5f8f4;
+  color: #12351f;
+}
+
+.rgmed-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid #d8e6d7;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 24px rgba(21, 64, 36, 0.06);
+  backdrop-filter: blur(12px);
+}
+
+.rgmed-header-inner {
+  display: flex;
+  width: min(100%, 80rem);
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 auto;
+  padding: 0.85rem 1rem;
+}
+
+.rgmed-brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.rgmed-brand img {
+  width: 9.5rem;
+  max-width: 34vw;
+  border-radius: 8px;
+  background: #ffffff;
+  object-fit: contain;
+}
+
+.rgmed-brand p,
+.rgmed-section-head p {
+  margin: 0 0 0.2rem;
+  color: #4b8b42;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rgmed-brand h1,
+.rgmed-section-head h2 {
+  margin: 0;
+  color: #12351f;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.rgmed-brand h1 {
+  font-size: clamp(1rem, 2vw, 1.35rem);
+}
+
+.rgmed-back,
+.rgmed-status {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  border-radius: 8px;
+  border: 1px solid #cddfcc;
+  background: #ffffff;
+  padding: 0 0.85rem;
+  color: #236235;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.rgmed-status {
+  color: #3b6f35;
+}
+
+.rgmed-main {
+  display: grid;
+  width: min(100%, 80rem);
+  grid-template-columns: minmax(0, 1.08fr) minmax(20rem, 0.92fr);
+  gap: 1rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.rgmed-panel {
+  min-width: 0;
+  border: 1px solid #d8e6d7;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(21, 64, 36, 0.06);
+  padding: 1.1rem;
+}
+
+.rgmed-history {
+  grid-column: 1 / -1;
+}
+
+.rgmed-section-head {
+  margin-bottom: 1rem;
+}
+
+.rgmed-section-head h2 {
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+}
+
+.rgmed-fieldset,
+.rgmed-note {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.rgmed-fieldset > span,
+.rgmed-note {
+  color: #4f6e56;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.rgmed-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.rgmed-segment-grid,
+.rgmed-chip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.rgmed-segment-grid.compact,
+.rgmed-chip-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rgmed-segment-grid button,
+.rgmed-chip-grid button {
+  min-height: 3rem;
+  border-radius: 8px;
+  border: 1px solid #cddfcc;
+  background: #ffffff;
+  color: #1f422a;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.25;
+  padding: 0.65rem;
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.rgmed-segment-grid button.active,
+.rgmed-chip-grid button.active {
+  border-color: #4b8b42;
+  background: #eaf5e6;
+  color: #164821;
+}
+
+.rgmed-note textarea {
+  min-height: 7rem;
+  resize: vertical;
+  border-radius: 8px;
+  border: 1px solid #cddfcc;
+  padding: 0.8rem;
+  color: #12351f;
+  font: inherit;
+  outline: none;
+}
+
+.rgmed-note textarea:focus {
+  border-color: #4b8b42;
+  box-shadow: 0 0 0 3px rgba(75, 139, 66, 0.12);
+}
+
+.rgmed-upload {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 1rem;
+  border: 1px dashed #96bd8c;
+  border-radius: 12px;
+  background: #f7fbf5;
+  padding: 1.25rem;
+  cursor: pointer;
+}
+
+.rgmed-upload strong {
+  color: #164821;
+}
+
+.rgmed-upload span {
+  color: #5d7662;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.rgmed-upload input {
+  display: none;
+}
+
+.rgmed-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.rgmed-photo-grid figure {
+  aspect-ratio: 1;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #edf5ea;
+}
+
+.rgmed-photo-grid img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.rgmed-preview {
+  align-self: start;
+  position: sticky;
+  top: 5.5rem;
+}
+
+.rgmed-preview pre {
+  min-height: 18rem;
+  max-height: 30rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  border-radius: 10px;
+  border: 1px solid #d8e6d7;
+  background: #fbfdf9;
+  padding: 1rem;
+  color: #263d2d;
+  font: 0.92rem/1.65 "Segoe UI", system-ui, sans-serif;
+}
+
+.rgmed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.rgmed-message,
+.rgmed-empty {
+  border-radius: 8px;
+  background: #eaf5e6;
+  padding: 0.75rem;
+  color: #236235;
+  font-size: 0.9rem;
+}
+
+.rgmed-history-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.rgmed-history-list article {
+  min-width: 0;
+  border: 1px solid #d8e6d7;
+  border-radius: 10px;
+  padding: 0.9rem;
+}
+
+.rgmed-history-list article div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.rgmed-history-list strong {
+  color: #164821;
+}
+
+.rgmed-history-list span,
+.rgmed-history-list p {
+  color: #5d7662;
+  font-size: 0.86rem;
+}
+
+.rgmed-history-list p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 920px) {
+  .rgmed-main {
+    grid-template-columns: 1fr;
+  }
+
+  .rgmed-preview {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .rgmed-header-inner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .rgmed-brand {
+    order: -1;
+    width: 100%;
+  }
+
+  .rgmed-brand img {
+    width: 7.5rem;
+  }
+
+  .rgmed-form-grid,
+  .rgmed-segment-grid,
+  .rgmed-segment-grid.compact,
+  .rgmed-chip-grid,
+  .rgmed-history-list {
+    grid-template-columns: 1fr;
+  }
+
+  .rgmed-photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+.rgmed-output-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rgmed-output-grid figure {
+  aspect-ratio: 3750 / 1969;
+}
+
+@media (max-width: 640px) {
+  .rgmed-output-grid {
+    grid-template-columns: 1fr;
+  }
+}

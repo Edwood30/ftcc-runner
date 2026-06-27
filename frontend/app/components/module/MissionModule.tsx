@@ -122,7 +122,7 @@ export function MissionModule(props: MissionModuleProps) {
                 {MISSION_TYPE_OPTIONS.map((option) => (
                   <label
                     key={option.value}
-                    className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition ${
+                    className={`mission-choice flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition ${
                       form.what === option.value
                         ? "border-[#2FA4C8] bg-[#E6F4F9] text-[#17324A] dark:border-[#2FA4C8]/60 dark:bg-[#13344A] dark:text-white"
                         : "border-[#1F5F8B]/14 bg-white text-[#17324A] hover:border-[#2FA4C8]/40 dark:border-white/10 dark:bg-[#102132] dark:text-[#E2EDF5]"
@@ -136,7 +136,7 @@ export function MissionModule(props: MissionModuleProps) {
                       onChange={() => setMissionType(option.value)}
                       className="h-4 w-4 accent-[#2FA4C8]"
                     />
-                    {option.label}
+                    <span className="mission-choice-text">{option.label}</span>
                   </label>
                 ))}
               </div>
@@ -150,7 +150,7 @@ export function MissionModule(props: MissionModuleProps) {
                 {POST_PHASE_OPTIONS.map((option) => (
                   <label
                     key={option.value}
-                    className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition ${
+                    className={`mission-choice flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition ${
                       form.postPhase === option.value
                         ? "border-[#2FA4C8] bg-[#E6F4F9] text-[#17324A] dark:border-[#2FA4C8]/60 dark:bg-[#13344A] dark:text-white"
                         : "border-[#1F5F8B]/14 bg-white text-[#17324A] hover:border-[#2FA4C8]/40 dark:border-white/10 dark:bg-[#102132] dark:text-[#E2EDF5]"
@@ -164,7 +164,7 @@ export function MissionModule(props: MissionModuleProps) {
                       onChange={() => setPostPhase(option.value)}
                       className="h-4 w-4 accent-[#2FA4C8]"
                     />
-                    {option.label}
+                    <span className="mission-choice-text">{option.label}</span>
                   </label>
                 ))}
               </div>
@@ -178,7 +178,7 @@ export function MissionModule(props: MissionModuleProps) {
                 {MISSION_SERVICE_OPTIONS.map((service) => (
                   <label
                     key={service}
-                    className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#1F5F8B]/14 bg-white px-4 py-3 text-sm text-[#17324A] transition hover:border-[#2FA4C8]/40 dark:border-white/10 dark:bg-[#102132] dark:text-[#E2EDF5]"
+                    className="mission-choice flex cursor-pointer items-center gap-3 rounded-xl border border-[#1F5F8B]/14 bg-white px-4 py-3 text-sm text-[#17324A] transition hover:border-[#2FA4C8]/40 dark:border-white/10 dark:bg-[#102132] dark:text-[#E2EDF5]"
                   >
                     <input
                       type="checkbox"
@@ -186,7 +186,7 @@ export function MissionModule(props: MissionModuleProps) {
                       onChange={() => toggleService(service)}
                       className="h-4 w-4 rounded accent-[#2FA4C8]"
                     />
-                    {service}
+                    <span className="mission-choice-text">{service}</span>
                   </label>
                 ))}
               </div>

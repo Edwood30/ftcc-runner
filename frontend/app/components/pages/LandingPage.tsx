@@ -72,17 +72,3 @@ export function LandingPage() {
   );
 }
 
-export function RgMedPage() {
-  return (
-    <main className="rgmed-placeholder">
-      <img src="/rg-med-logo.png" alt="RG-Med Pharmacy logo" />
-      <p>PhilHealth GAMOT Partner</p>
-      <h1>RG-MED Pharmacy Posting</h1>
-      <h2>The RG-Med posting module is ready for connection.</h2>
-      <Link to="/" className="landing-action landing-action-dark">
-        <span>Back to systems</span>
-        <span aria-hidden="true">-&gt;</span>
-      </Link>
-    </main>
-  );
-}
