@@ -63,11 +63,10 @@ export function HistoryModule({
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#E6F4F9] px-3 py-1 text-xs font-semibold tracking-[0.24em] text-[#1F5F8B] dark:bg-[#13344A] dark:text-[#8EDCF2]">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-sm shadow-sm dark:bg-[#0E2132]">🕘</span>
-            YAKAP Caravan Posting History
+            YAKAP Caravan History
           </div>
-          <h2 className="text-2xl font-bold text-[#17324A] dark:text-white">Saved history with images and captions</h2>
-          <p className="mt-1 text-sm text-[#648197] dark:text-slate-400">Review previous outreach packs by date, location, thumbnail set, and quick action.</p>
+          <h2 className="text-2xl font-bold text-[#17324A] dark:text-white">Saved posts</h2>
+          <p className="mt-1 text-sm text-[#648197] dark:text-slate-400">Find previous outreach posts by location and date.</p>
         </div>
         <p className="rounded-full bg-[#F3FAFD] px-4 py-2 text-xs font-semibold tracking-[0.18em] text-[#648197] dark:bg-[#12293D] dark:text-slate-300">
           Page {page} of {totalPages}

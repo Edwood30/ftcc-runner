@@ -45,7 +45,7 @@ export function LandingPage() {
     <main className="landing-shell" aria-label="Choose posting system">
       <div className="landing-options">
         {systems.map((system) => (
-          <section className={`landing-panel landing-panel-${system.theme}`} key={system.title}>
+          <Link className={`landing-panel landing-panel-${system.theme}`} to={system.href} aria-label={system.label} key={system.title}>
             <div className="landing-content">
               <div className="landing-logo-frame">
                 <img className="landing-logo" src={system.logo} alt={system.logoAlt} />
@@ -59,12 +59,12 @@ export function LandingPage() {
                   <li key={point}>{point}</li>
                 ))}
               </ul>
-              <Link className="landing-action" to={system.href} aria-label={system.label}>
+              <span className="landing-action" aria-hidden="true">
                 <span>{system.label}</span>
-                <span aria-hidden="true">-&gt;</span>
-              </Link>
+                <span>-&gt;</span>
+              </span>
             </div>
-          </section>
+          </Link>
         ))}
       </div>
       <span className="landing-divider">OR</span>

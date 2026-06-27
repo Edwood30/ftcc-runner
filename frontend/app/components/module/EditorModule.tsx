@@ -53,11 +53,10 @@ export function EditorModule({
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#E6F4F9] px-3 py-1 text-xs font-semibold tracking-[0.24em] text-[#1F5F8B] dark:bg-[#13344A] dark:text-[#8EDCF2]">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-sm shadow-sm dark:bg-[#0E2132]">📝</span>
-              Caption Generator
+              Caption
             </div>
-            <h2 className="text-2xl font-bold text-[#17324A] dark:text-white">Mission story preview</h2>
-            <p className="mt-1 text-sm leading-6 text-[#648197] dark:text-slate-400">Review the generated caption as if it were already prepared for your outreach post and archive record.</p>
+            <h2 className="text-2xl font-bold text-[#17324A] dark:text-white">Caption preview</h2>
+            <p className="mt-1 text-sm leading-6 text-[#648197] dark:text-slate-400">Review the caption before downloading or saving this post.</p>
           </div>
           <Button onClick={() => void copyCaption()}>{copied ? "Copied" : "Copy Content"}</Button>
         </div>
@@ -65,7 +64,7 @@ export function EditorModule({
         <div className="ftcc-fade-in rounded-[24px] border border-[#1F5F8B]/10 bg-[#FFFEFC] p-5 text-sm leading-7 whitespace-pre-wrap text-[#25445C] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] dark:border-white/10 dark:bg-[#0D1B29] dark:text-[#D7E6F0] dark:shadow-none">
           <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-[#2FA4C8] dark:text-[#8EDCF2]">
             <span className="h-2.5 w-2.5 rounded-full bg-[#2FA4C8]" />
-            DOCUMENT PREVIEW
+            PREVIEW
           </div>
           {caption}
         </div>
@@ -74,8 +73,8 @@ export function EditorModule({
       <div className="rounded-[24px] border border-[#1F5F8B]/10 bg-white p-5 dark:border-white/10 dark:bg-[#0F1F2F]">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-xl font-bold text-[#17324A] dark:text-white">Mission Preview Gallery</h3>
-            <p className="mt-1 text-sm text-[#648197] dark:text-slate-400">Generated outputs are ready for download, preview, and optional history saving.</p>
+            <h3 className="text-xl font-bold text-[#17324A] dark:text-white">Output gallery</h3>
+            <p className="mt-1 text-sm text-[#648197] dark:text-slate-400">Review, download, or save the generated images.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="primary" onClick={downloadZip} disabled={!processedImages.length}>

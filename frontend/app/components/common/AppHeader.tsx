@@ -46,7 +46,7 @@ export function AppHeader({ inbox }: AppHeaderProps) {
           <div>
             <p className="text-xs font-semibold tracking-[0.28em] text-[#2FA4C8]">FILIPINO TRUSTED CARE CENTER</p>
             <h1 className="text-xl font-bold text-[#17324A]">YAKAP Caravan Posting System</h1>
-            <p className="text-sm text-[#648197]">Automate YAKAP Content Generation and History Management</p>
+            <p className="text-sm text-[#648197]">Mission posting and history management</p>
           </div>
         </div>
 
@@ -63,11 +63,11 @@ export function AppHeader({ inbox }: AppHeaderProps) {
                     return next;
                   });
                 }}
-                className="relative flex h-11 w-11 items-center justify-center rounded-full border border-[#1F5F8B]/15 bg-white text-lg shadow-sm transition hover:border-[#2FA4C8]/40 hover:bg-[#F7FCFE] dark:border-white/10 dark:bg-[#102132] dark:hover:bg-[#16314A]"
+                className="relative inline-flex min-h-10 items-center justify-center rounded-lg border border-[#C9D8E2] bg-white px-3 text-sm text-[#1F5F8B] transition hover:border-[#1F5F8B] hover:bg-[#F6FAFC] dark:border-white/10 dark:bg-[#0F1F2F] dark:hover:bg-[#13283A]"
                 title="Telegram inbox"
                 aria-label="Telegram inbox notifications"
               >
-                🔔
+                <span className="text-xs font-semibold">Inbox</span>
                 {showBadge && (
                   <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-sm">
                     {count > 99 ? "99+" : count}

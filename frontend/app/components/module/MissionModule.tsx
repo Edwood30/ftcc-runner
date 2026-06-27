@@ -78,21 +78,20 @@ export function MissionModule(props: MissionModuleProps) {
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-sm shadow-sm dark:bg-[#0E2132]">
               FT
             </span>
-            Automate YAKAP Content Generation
+            Mission Post Setup
           </div>
           <h2 className="text-2xl font-bold text-[#17324A] dark:text-white">
-            Prepare a new medical mission
+            Prepare mission post
           </h2>
           <p className="mt-1 max-w-xl text-sm leading-6 text-[#648197] dark:text-slate-400">
-            Capture the mission details, upload community photos, and build
-            branded content that matches the FTCC outreach identity.
+            Enter the mission details, upload photos, and prepare a clean posting pack for review.
           </p>
         </div>
       </div>
 
       {inboxDraftActive && (
         <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 dark:border-amber-400/25 dark:bg-amber-500/10 dark:text-amber-100">
-          <span className="font-semibold">Telegram inbox draft.</span> Edit photos below, run <strong>Generate Mission Pack</strong>, then save to history from the preview panel. The inbox item will clear after a successful save.
+          <span className="font-semibold">Telegram inbox draft.</span> Edit photos below, run <strong>Generate Pack</strong>, then save to history from the preview panel. The inbox item will clear after a successful save.
         </div>
       )}
 
@@ -263,11 +262,10 @@ export function MissionModule(props: MissionModuleProps) {
               </div>
               <div>
                 <p className="text-base font-bold text-[#17324A] dark:text-white">
-                  Drag & drop mission photos
+                  Upload mission photos
                 </p>
                 <p className="mt-1 text-sm text-[#648197] dark:text-slate-400">
-                  High-resolution community, consultation, and outreach images
-                  work best.
+                  Use clear photos from the outreach activity.
                 </p>
               </div>
 

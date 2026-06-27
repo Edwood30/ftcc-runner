@@ -7,16 +7,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export function Button({ variant = "secondary", children, className = "", ...props }: PropsWithChildren<ButtonProps>) {
   const variantClass =
     variant === "primary"
-      ? "border border-sky-700/10 bg-gradient-to-r from-[#1F5F8B] to-[#2FA4C8] text-white shadow-[0_10px_24px_rgba(31,95,139,0.22)] hover:shadow-[0_14px_28px_rgba(47,164,200,0.26)]"
+      ? "border border-[#1F5F8B] bg-[#1F5F8B] text-white hover:border-[#174B70] hover:bg-[#174B70]"
       : variant === "danger"
-        ? "border border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/15"
-        : "border border-[#1F5F8B]/20 bg-white text-[#1F5F8B] hover:border-[#2FA4C8]/45 hover:bg-[#E6F4F9] dark:border-white/10 dark:bg-[#102132] dark:text-[#9DDAEE] dark:hover:border-[#2FA4C8]/25 dark:hover:bg-[#16314A]";
+        ? "border border-rose-200 bg-white text-rose-700 hover:border-rose-300 hover:bg-rose-50 dark:border-rose-400/25 dark:bg-[#0F1F2F] dark:text-rose-200 dark:hover:bg-rose-500/10"
+        : "border border-[#C9D8E2] bg-white text-[#1F5F8B] hover:border-[#1F5F8B] hover:bg-[#F6FAFC] dark:border-white/10 dark:bg-[#0F1F2F] dark:text-[#A8D8EA] dark:hover:border-[#2FA4C8]/40 dark:hover:bg-[#13283A]";
   return (
     <button
       {...props}
-      className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${variantClass} ${className}`}
+      className={`inline-flex min-h-10 max-w-full items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold leading-tight transition duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${variantClass} ${className}`}
     >
-      {children}
+      <span className="truncate">{children}</span>
     </button>
   );
 }
