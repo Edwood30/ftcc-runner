@@ -4,7 +4,7 @@ import {
   MISSION_TYPE_OPTIONS,
   POST_PHASE_OPTIONS,
 } from "../../configuration/constants";
-import type { MissionFormState, MissionType, PostPhase } from "../../types/mission";
+import type { BranchOverlay, MissionFormState, MissionType, PostPhase } from "../../types/mission";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 
@@ -18,9 +18,11 @@ interface MissionModuleProps {
   canGenerate: boolean;
   appError: string;
   failedCount: number;
+  branches: BranchOverlay[];
   setField: (name: "where" | "when", value: string) => void;
   setMissionType: (what: MissionType) => void;
   setPostPhase: (postPhase: PostPhase) => void;
+  setBranch: (branchId: string) => void;
   toggleService: (service: string) => void;
   handleFiles: (incoming: FileList | null) => Promise<void>;
   removeFile: (index: number) => void;
@@ -29,8 +31,6 @@ interface MissionModuleProps {
   cancelProcessing: () => void;
   retryFailed: () => Promise<void>;
   openEditor: (file: File) => void;
-  /** True when the current draft was opened from the Telegram inbox (header). */
-  inboxDraftActive?: boolean;
 }
 
 export function MissionModule(props: MissionModuleProps) {
@@ -44,9 +44,11 @@ export function MissionModule(props: MissionModuleProps) {
     canGenerate,
     appError,
     failedCount,
+    branches,
     setField,
     setMissionType,
     setPostPhase,
+    setBranch,
     toggleService,
     handleFiles,
     removeFile,
@@ -55,7 +57,6 @@ export function MissionModule(props: MissionModuleProps) {
     cancelProcessing,
     retryFailed,
     openEditor,
-    inboxDraftActive = false,
   } = props;
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -88,12 +89,6 @@ export function MissionModule(props: MissionModuleProps) {
           </p>
         </div>
       </div>
-
-      {inboxDraftActive && (
-        <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 dark:border-amber-400/25 dark:bg-amber-500/10 dark:text-amber-100">
-          <span className="font-semibold">Telegram inbox draft.</span> Edit photos below, run <strong>Generate Pack</strong>, then save to history from the preview panel. The inbox item will clear after a successful save.
-        </div>
-      )}
 
       {/* STEP 1 */}
       <div className="grid gap-5">
@@ -222,6 +217,21 @@ export function MissionModule(props: MissionModuleProps) {
               </p>
             </div>
           </div>
+
+          <label className="mb-4 flex min-w-0 flex-col gap-2 text-xs font-semibold text-[#516C7E] dark:text-slate-400">
+            Overlay Branch
+            <select
+              value={form.branchId}
+              onChange={(event) => setBranch(event.target.value)}
+              className="min-h-11 w-full rounded-lg border border-[#C9D8E2] bg-white px-3 py-2.5 text-sm text-[#17324A] outline-none transition focus:border-[#1F5F8B] focus:ring-2 focus:ring-[#1F5F8B]/10 dark:border-white/10 dark:bg-[#0F1F2F] dark:text-[#E2EDF5] dark:focus:border-[#2FA4C8]"
+            >
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <div
             className={`ftcc-lift relative overflow-hidden rounded-[24px] border-2 border-dashed p-8 text-center transition-all duration-300 ${

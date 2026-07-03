@@ -1,174 +1,89 @@
 import { useEffect, useRef, useState } from "react";
-import type { InboxSubmissionItem } from "../../types/mission";
+import { Link, NavLink } from "react-router-dom";
 
-export interface AppHeaderInboxProps {
-  assetBaseUrl: string;
-  pendingCount: number;
-  items: InboxSubmissionItem[];
-  loading: boolean;
-  error?: string;
-  onRefresh: () => void;
-  onLoadIntoMission: (item: InboxSubmissionItem) => void | Promise<void>;
-  onReject: (id: string) => void | Promise<void>;
-}
-
-interface AppHeaderProps {
-  inbox?: AppHeaderInboxProps;
-}
-
-export function AppHeader({ inbox }: AppHeaderProps) {
-  const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
+export function AppHeader() {
+  const [appOpen, setAppOpen] = useState(false);
+  const appPanelRef = useRef<HTMLDivElement | null>(null);
+  const appButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (panelRef.current?.contains(t) || buttonRef.current?.contains(t)) return;
-      setOpen(false);
+    if (!appOpen) return;
+    const onDoc = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (appPanelRef.current?.contains(target) || appButtonRef.current?.contains(target)) return;
+      setAppOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
+  }, [appOpen]);
 
-  const count = inbox?.pendingCount ?? 0;
-  const showBadge = inbox && count > 0;
+  const menuLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold transition ${
+      isActive
+        ? "bg-[#E6F4F9] text-[#1F5F8B]"
+        : "text-[#45677D] hover:bg-[#F6FAFC] hover:text-[#1F5F8B]"
+    }`;
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/45 bg-white/72 shadow-[0_10px_35px_rgba(19,60,92,0.08)] backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5">
-        <div className="flex items-center gap-4">
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#F4FBFE] via-white to-[#D8EEF6] shadow-[0_8px_24px_rgba(47,164,200,0.18)]">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#F4FBFE] via-white to-[#D8EEF6] shadow-[0_8px_24px_rgba(47,164,200,0.18)]">
             <div className="absolute inset-2 rounded-full border border-[#2FA4C8]/18" />
-            <img src="/FTCC MEDICAL LOGO.png" alt="FTCC Medical Clinic logo" className="relative h-16 w-16 object-contain" />
+            <img src="/FTCC MEDICAL LOGO.png" alt="FTCC Medical Clinic logo" className="relative h-11 w-11 object-contain" />
           </div>
-          <div>
-            <p className="text-xs font-semibold tracking-[0.28em] text-[#2FA4C8]">FILIPINO TRUSTED CARE CENTER</p>
-            <h1 className="text-xl font-bold text-[#17324A]">YAKAP Caravan Posting System</h1>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold tracking-[0.14em] text-[#2FA4C8]">FILIPINO TRUSTED CARE CENTER</p>
+            <h1 className="truncate text-lg font-bold text-[#17324A]">YAKAP Caravan Posting System</h1>
             <p className="text-sm text-[#648197]">Mission posting and history management</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {inbox && (
-            <div className="relative">
-              <button
-                ref={buttonRef}
-                type="button"
-                onClick={() => {
-                  setOpen((wasOpen) => {
-                    const next = !wasOpen;
-                    if (next && inbox) inbox.onRefresh();
-                    return next;
-                  });
-                }}
-                className="relative inline-flex min-h-10 items-center justify-center rounded-lg border border-[#C9D8E2] bg-white px-3 text-sm text-[#1F5F8B] transition hover:border-[#1F5F8B] hover:bg-[#F6FAFC] dark:border-white/10 dark:bg-[#0F1F2F] dark:hover:bg-[#13283A]"
-                title="Telegram inbox"
-                aria-label="Telegram inbox notifications"
-              >
-                <span className="text-xs font-semibold">Inbox</span>
-                {showBadge && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-sm">
-                    {count > 99 ? "99+" : count}
-                  </span>
-                )}
-              </button>
+        <div className="relative">
+          <button
+            ref={appButtonRef}
+            type="button"
+            onClick={() => setAppOpen((wasOpen) => !wasOpen)}
+            className="inline-flex min-h-12 items-center gap-3 rounded-full border border-[#DCE8EF] bg-white px-3 py-1.5 shadow-[0_8px_18px_rgba(23,50,74,0.08)] transition hover:border-[#B9D3E2] hover:bg-[#F8FCFE]"
+            aria-label="Open EMBY app menu"
+            aria-expanded={appOpen}
+          >
+            <img src="/FTCC HEAD.png" className="h-9 w-9 rounded-full bg-white object-contain" alt="" />
+            <span className="min-w-0 text-left">
+              <span className="block text-sm font-semibold leading-5 text-[#17324A]">EMBY APP</span>
+              <span className="mt-0.5 block h-1.5 w-20 rounded-full bg-emerald-400" aria-label="System working" />
+            </span>
+            <span
+              className={`text-sm font-bold text-[#1F5F8B] transition-transform ${appOpen ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            >
+              &#9662;
+            </span>
+          </button>
 
-              {open && (
-                <div
-                  ref={panelRef}
-                  className="absolute right-0 top-[calc(100%+8px)] w-[min(100vw-2rem,22rem)] overflow-hidden rounded-2xl border border-[#1F5F8B]/12 bg-white shadow-[0_20px_50px_rgba(19,60,92,0.15)] dark:border-white/10 dark:bg-[#0F1F2F]"
-                >
-                  <div className="border-b border-[#1F5F8B]/10 px-4 py-3 dark:border-white/10">
-                    <p className="text-sm font-bold text-[#17324A] dark:text-white">Telegram inbox 
-                      
-                    </p>
-                    <p className="text-xs text-[#648197] dark:text-slate-400">
-                      <a href="https://web.telegram.org/#/im?p=@ftcc_runner_bot" target="_blank" rel="noopener noreferrer" className="text-[#2FA4C8]">@ftcc_runner_bot</a>
-                      <br />
-                      <br />
-                      Open in mission editor to adjust images, then save to history.
-                    </p>
-                  </div>
-                  <div className="max-h-[min(70vh,320px)] overflow-y-auto">
-                    {inbox.loading && (
-                      <p className="px-4 py-6 text-center text-sm text-[#648197] dark:text-slate-400">Loading…</p>
-                    )}
-                    {!inbox.loading && inbox.error && (
-                      <p className="px-4 py-4 text-center text-sm text-rose-600 dark:text-rose-300">{inbox.error}</p>
-                    )}
-                    {!inbox.loading && !inbox.error && inbox.items.length === 0 && (
-                      <p className="px-4 py-6 text-center text-sm text-[#648197] dark:text-slate-400">No pending submissions.</p>
-                    )}
-                    {!inbox.loading &&
-                      !inbox.error &&
-                      inbox.items.map((item) => {
-                        const base = inbox.assetBaseUrl.replace(/\/$/, "");
-                        const thumb = item.images[0] ? `${base}/${item.images[0].replace(/^\//, "")}` : "";
-                        return (
-                        <div
-                          key={item.id}
-                          className="border-b border-[#1F5F8B]/8 px-4 py-3 last:border-0 dark:border-white/10"
-                        >
-                          <div className="flex gap-3">
-                            {thumb ? (
-                              <img src={thumb} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover shadow-sm" />
-                            ) : (
-                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#E6F4F9] text-lg dark:bg-[#15364D]">
-                                📷
-                              </div>
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-[#17324A] dark:text-white">{item.what}</p>
-                              <p className="truncate text-xs text-[#648197] dark:text-slate-400">{item.where}</p>
-                              <p className="mt-0.5 text-[10px] text-[#94a3b8]">
-                                {new Date(item.when).toLocaleDateString()}
-                                {item.telegramUsername ? ` · @${item.telegramUsername}` : ""}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              className="rounded-lg bg-[#1F5F8B] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2FA4C8]"
-                              onClick={() => {
-                                void Promise.resolve(inbox.onLoadIntoMission(item)).finally(() => setOpen(false));
-                              }}
-                            >
-                              Edit in mission
-                            </button>
-                            <button
-                              type="button"
-                              className="rounded-lg border border-[#1F5F8B]/20 px-2.5 py-1.5 text-xs font-semibold text-[#64748b] hover:bg-rose-50 hover:text-rose-700 dark:border-white/10 dark:hover:bg-rose-500/10 dark:hover:text-rose-200"
-                              onClick={() => {
-                                if (window.confirm("Reject this submission? It will leave the pending inbox.")) {
-                                  void Promise.resolve(inbox.onReject(item.id)).finally(() => inbox.onRefresh());
-                                }
-                              }}
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              )}
+          {appOpen && (
+            <div
+              ref={appPanelRef}
+              className="absolute right-0 top-[calc(100%+8px)] z-50 w-48 rounded-xl border border-[#DCE8EF] bg-white p-2 shadow-[0_18px_45px_rgba(19,60,92,0.14)]"
+            >
+              <NavLink to="/system" className={menuLinkClass} onClick={() => setAppOpen(false)}>
+                Mission
+              </NavLink>
+              <NavLink to="/branches" className={menuLinkClass} onClick={() => setAppOpen(false)}>
+                Branches
+              </NavLink>
+              <NavLink to="/history" className={menuLinkClass} onClick={() => setAppOpen(false)}>
+                History
+              </NavLink>
+              <Link
+                to="/"
+                className="mt-1 flex min-h-10 items-center rounded-lg border-t border-[#EDF4F7] px-3 pt-2 text-sm font-semibold text-[#7A95A8] hover:text-[#1F5F8B]"
+                onClick={() => setAppOpen(false)}
+              >
+                Switch System
+              </Link>
             </div>
           )}
-
-          <div className="hidden items-center gap-3 rounded-full border border-[#1F5F8B]/12 bg-white/90 px-3 py-2 shadow-[0_10px_20px_rgba(19,60,92,0.06)] sm:flex">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#1F5F8B] to-[#2FA4C8] text-sm font-bold text-white">
-              <img src="/FTCC HEAD.png" className="h-10 w-10 bg-white object-contain" alt="" />
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-semibold text-[#17324A]">EMBY APP</p>
-              <p className="text-xs text-[#648197]">System online</p>
-            </div>
-            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_0_5px_rgba(52,211,153,0.12)]" />
-          </div>
         </div>
       </div>
     </header>

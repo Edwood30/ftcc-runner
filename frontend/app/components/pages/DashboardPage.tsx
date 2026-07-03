@@ -1,133 +1,31 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { env } from "../../configuration/env";
-import { createMission, deleteMissionHistory, fetchMissionHistory, getMissionDownloadUrl } from "../../services/mission-service";
-import {
-  fetchSubmissions,
-  linkSubmissionToPublishedMission,
-  rejectSubmission,
-} from "../../services/submission-service";
-import type { InboxSubmissionItem, MissionHistoryFilters, MissionHistoryItem, ProcessedImage } from "../../types/mission";
+import { useEffect, useState } from "react";
+import { createMission } from "../../services/mission-service";
+import type { ProcessedImage } from "../../types/mission";
 import { useImageEditor } from "../../hooks/useImageEditor";
 import { useMissionGenerator } from "../../hooks/useMissionGenerator";
-import type { AppHeaderInboxProps } from "../common/AppHeader";
+import { loadBranches } from "../../utils/branches";
 import { AppHeader } from "../common/AppHeader";
-import { HistoryDetailModal } from "../domain/HistoryDetailModal";
 import { ImageEditorModal } from "../domain/ImageEditorModal";
 import { PreviewModal } from "../domain/PreviewModal";
 import { EditorModule } from "../module/EditorModule";
-import { HistoryModule } from "../module/HistoryModule";
 import { MissionModule } from "../module/MissionModule";
 
 export function DashboardPage() {
   const { editedImages, editingFile, openEditor, closeEditor, saveEditedImage, clearEditedImages } = useImageEditor();
   const mission = useMissionGenerator(editedImages);
-  const { hydrateFromInboxSubmission } = mission;
+  const [branches, setBranches] = useState(() => loadBranches());
   const [activePreview, setActivePreview] = useState<ProcessedImage | null>(null);
-  const [history, setHistory] = useState<MissionHistoryItem[]>([]);
-  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
-  const [historyError, setHistoryError] = useState("");
-  const [historyPage, setHistoryPage] = useState(1);
-  const [historyLimit] = useState(10);
-  const [historyTotal, setHistoryTotal] = useState(0);
-  const [activeHistory, setActiveHistory] = useState<MissionHistoryItem | null>(null);
-  const [historyFilters, setHistoryFilters] = useState<MissionHistoryFilters>({});
   const [generatedBatch, setGeneratedBatch] = useState<{ what: string; where: string; when: string; caption: string; images: ProcessedImage[] } | null>(null);
   const [isSavingHistory, setIsSavingHistory] = useState(false);
   const [isHistorySaved, setIsHistorySaved] = useState(false);
   const [historyStatus, setHistoryStatus] = useState("");
   const [historyStatusTone, setHistoryStatusTone] = useState<"success" | "error" | "info">("info");
 
-  const [pendingInboxItems, setPendingInboxItems] = useState<InboxSubmissionItem[]>([]);
-  const [pendingInboxTotal, setPendingInboxTotal] = useState(0);
-  const [pendingInboxLoading, setPendingInboxLoading] = useState(false);
-  const [pendingInboxError, setPendingInboxError] = useState("");
-  const [loadedInboxSubmissionId, setLoadedInboxSubmissionId] = useState<string | null>(null);
-
-  const loadHistory = useCallback(async (page = historyPage, filters = historyFilters) => {
-    setIsHistoryLoading(true);
-    try {
-      const result = await fetchMissionHistory(page, historyLimit, filters);
-      setHistory(result.items);
-      setHistoryTotal(result.total);
-      setHistoryPage(result.page);
-      setHistoryError("");
-    } catch (error) {
-      setHistoryError(error instanceof Error ? error.message : "Unable to load mission history.");
-    } finally {
-      setIsHistoryLoading(false);
-    }
-  }, [historyFilters, historyLimit, historyPage]);
-
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadHistory();
-  }, [loadHistory]);
-
-  const loadPendingInbox = useCallback(async () => {
-    setPendingInboxLoading(true);
-    try {
-      const result = await fetchSubmissions(1, 40, "PENDING");
-      setPendingInboxItems(result.items);
-      setPendingInboxTotal(result.total);
-      setPendingInboxError("");
-    } catch (error) {
-      setPendingInboxError(error instanceof Error ? error.message : "Unable to load inbox.");
-    } finally {
-      setPendingInboxLoading(false);
-    }
+    const onFocus = () => setBranches(loadBranches());
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadPendingInbox();
-  }, [loadPendingInbox]);
-
-  const handleLoadInboxIntoMission = useCallback(
-    async (item: InboxSubmissionItem) => {
-      setGeneratedBatch(null);
-      setIsHistorySaved(false);
-      setHistoryStatusTone("info");
-      clearEditedImages();
-      setLoadedInboxSubmissionId(item.id);
-      try {
-        await hydrateFromInboxSubmission(item, env.API_BASE_URL);
-        setHistoryStatus("Loaded from Telegram inbox. Edit images in Step 2, generate your pack, then save to history.");
-      } catch (error) {
-        setLoadedInboxSubmissionId(null);
-        setHistoryStatus(error instanceof Error ? error.message : "Could not load submission into the mission editor.");
-        setHistoryStatusTone("error");
-      }
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    },
-    [clearEditedImages, hydrateFromInboxSubmission],
-  );
-
-  const handleRejectInbox = useCallback(async (id: string) => {
-    await rejectSubmission(id, "Rejected from inbox.");
-    await loadPendingInbox();
-  }, [loadPendingInbox]);
-
-  const inboxHeaderProps = useMemo<AppHeaderInboxProps>(
-    () => ({
-      assetBaseUrl: env.API_BASE_URL,
-      pendingCount: pendingInboxTotal,
-      items: pendingInboxItems,
-      loading: pendingInboxLoading,
-      error: pendingInboxError || undefined,
-      onRefresh: loadPendingInbox,
-      onLoadIntoMission: handleLoadInboxIntoMission,
-      onReject: handleRejectInbox,
-    }),
-    [
-      handleLoadInboxIntoMission,
-      handleRejectInbox,
-      loadPendingInbox,
-      pendingInboxError,
-      pendingInboxItems,
-      pendingInboxLoading,
-      pendingInboxTotal,
-    ],
-  );
 
   const handleClear = () => {
     mission.clearAll();
@@ -136,7 +34,6 @@ export function DashboardPage() {
     setIsHistorySaved(false);
     setHistoryStatus("");
     setHistoryStatusTone("info");
-    setLoadedInboxSubmissionId(null);
   };
 
   const handleGenerate = async () => {
@@ -162,7 +59,6 @@ export function DashboardPage() {
     if (!generatedBatch || isSavingHistory || isHistorySaved) return;
     setIsSavingHistory(true);
     setHistoryStatus("");
-    const inboxId = loadedInboxSubmissionId;
     try {
       const result = await createMission({
         what: generatedBatch.what,
@@ -171,15 +67,6 @@ export function DashboardPage() {
         caption: generatedBatch.caption,
         images: generatedBatch.images.map((item) => item.dataURL),
       });
-      if (inboxId) {
-        try {
-          await linkSubmissionToPublishedMission(inboxId, result.mission.id);
-        } catch (linkError) {
-          setPendingInboxError(linkError instanceof Error ? linkError.message : "Inbox link after publish failed.");
-        }
-        setLoadedInboxSubmissionId(null);
-        void loadPendingInbox();
-      }
       setIsHistorySaved(true);
       setHistoryStatus(
         result.facebook.status === "posted"
@@ -189,7 +76,6 @@ export function DashboardPage() {
             : `Saved to history. ${result.facebook.message}`,
       );
       setHistoryStatusTone(result.facebook.status === "failed" ? "error" : "success");
-      await loadHistory(1);
     } catch (error) {
       setHistoryStatus(error instanceof Error ? error.message : "Unable to save this generated batch to history.");
       setHistoryStatusTone("error");
@@ -198,23 +84,9 @@ export function DashboardPage() {
     }
   };
 
-  const handleDeleteHistory = async (id: string) => {
-    try {
-      await deleteMissionHistory(id);
-      await loadHistory(historyPage);
-      if (activeHistory?.id === id) setActiveHistory(null);
-    } catch (error) {
-      setHistoryError(error instanceof Error ? error.message : "Unable to delete mission history.");
-    }
-  };
-
-  const handleDownloadHistory = (id: string) => {
-    window.open(getMissionDownloadUrl(id), "_blank", "noopener,noreferrer");
-  };
-
   return (
     <div className="min-h-screen">
-      <AppHeader inbox={inboxHeaderProps} />
+      <AppHeader />
       <main className="mx-auto grid max-w-7xl gap-6 px-4 py-8 xl:grid-cols-[1.02fr_0.98fr]">
         <MissionModule
           form={mission.form}
@@ -226,9 +98,11 @@ export function DashboardPage() {
           canGenerate={mission.canGenerate}
           appError={mission.appError}
           failedCount={mission.failedFiles.length}
+          branches={branches}
           setField={mission.setField}
           setMissionType={mission.setMissionType}
           setPostPhase={mission.setPostPhase}
+          setBranch={(branchId) => mission.setBranch(branchId, branches)}
           toggleService={mission.toggleService}
           handleFiles={mission.handleFiles}
           removeFile={mission.removeFile}
@@ -237,7 +111,6 @@ export function DashboardPage() {
           cancelProcessing={mission.cancelProcessing}
           retryFailed={mission.retryFailed}
           openEditor={openEditor}
-          inboxDraftActive={Boolean(loadedInboxSubmissionId)}
         />
         <EditorModule
           caption={generatedBatch?.caption ?? mission.caption}
@@ -252,32 +125,7 @@ export function DashboardPage() {
           onSaveHistory={handleSaveHistory}
         />
       </main>
-      <HistoryModule
-        missions={history}
-        isLoading={isHistoryLoading}
-        error={historyError}
-        assetBaseUrl={env.API_BASE_URL}
-        page={historyPage}
-        total={historyTotal}
-        limit={historyLimit}
-        onPageChange={(nextPage) => void loadHistory(nextPage)}
-        filters={historyFilters}
-        onApplyFilters={(filters) => {
-          setHistoryFilters(filters);
-          void loadHistory(1, filters);
-        }}
-        onResetFilters={() => {
-          const clearedFilters: MissionHistoryFilters = {};
-          setHistoryFilters(clearedFilters);
-          void loadHistory(1, clearedFilters);
-        }}
-        onView={setActiveHistory}
-        onDelete={handleDeleteHistory}
-        onDownload={handleDownloadHistory}
-      />
-
       <PreviewModal activePreview={activePreview} setActivePreview={setActivePreview} processedImages={mission.processedImages} />
-      <HistoryDetailModal mission={activeHistory} assetBaseUrl={env.API_BASE_URL} onClose={() => setActiveHistory(null)} />
       {editingFile && (
         <ImageEditorModal
           file={editingFile}

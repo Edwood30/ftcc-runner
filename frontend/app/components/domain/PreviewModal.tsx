@@ -23,8 +23,8 @@ export function PreviewModal({ activePreview, setActivePreview, processedImages 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#103148]/45 p-4 backdrop-blur-sm" onClick={() => setActivePreview(null)}>
-      <div className="ftcc-card flex max-w-4xl flex-col items-center gap-4 rounded-[30px] p-5 dark:text-[#E2EDF5]" onClick={(event) => event.stopPropagation()}>
-        <img src={activePreview.dataURL} alt={activePreview.name} className="max-h-[75vh] max-w-[90vw] rounded-[24px] border border-[#1F5F8B]/10" />
+      <div className="ftcc-card flex w-[min(96vw,1200px)] flex-col items-center gap-4 rounded-[30px] p-5 dark:text-[#E2EDF5]" onClick={(event) => event.stopPropagation()}>
+        <img src={activePreview.dataURL} alt={activePreview.name} className="max-h-[75vh] w-full rounded-[24px] border border-[#1F5F8B]/10 object-contain" />
         <div className="flex items-center gap-2">
           <Button aria-label="Previous image" onClick={() => move(-1)}>
             &larr;

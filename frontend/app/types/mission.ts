@@ -1,12 +1,22 @@
 export type MissionType = "YAKAP Caravan" | "AFTERCARE PROGRAM";
 export type PostPhase = "during" | "after";
 
+export interface BranchOverlay {
+  id: string;
+  name: string;
+  overlaySrc: string;
+  builtIn?: boolean;
+}
+
 export interface MissionFormState {
   what: MissionType | "";
   where: string;
   when: string;
   postPhase: PostPhase;
   services: string[];
+  branchId: string;
+  branchName: string;
+  branchOverlaySrc: string;
 }
 
 export interface ProcessedImage {
@@ -54,29 +64,3 @@ export interface SaveMissionResult {
   facebook: FacebookPublishResult;
 }
 
-export type SubmissionStatus = "PENDING" | "APPROVED" | "REJECTED";
-
-export interface InboxSubmissionItem {
-  id: string;
-  status: SubmissionStatus;
-  what: string;
-  where: string;
-  when: string;
-  caption: string;
-  folder: string;
-  images: string[];
-  telegramChatId?: string | null;
-  telegramUserId?: string | null;
-  telegramUsername?: string | null;
-  publishedMissionId?: string | null;
-  reviewNote?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface InboxListResponse {
-  items: InboxSubmissionItem[];
-  total: number;
-  page: number;
-  limit: number;
-}
