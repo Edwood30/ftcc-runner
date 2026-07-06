@@ -26,15 +26,15 @@ function buildIntro(what: MissionType, postPhase: PostPhase, where: string): str
 
   if (what === "YAKAP Caravan") {
     if (postPhase === "during") {
-      return `FTCC Medical Clinic is conducting a YAKAP Caravan in ${location}, delivering essential healthcare services to the community through its YAKAP Program.`;
+      return `FTCC Medical Clinic – Ligao Albay is conducting a **${what}** at **${location}**, bringing essential healthcare services closer to the community through the PhilHealth YAKAP Program.`;
     }
-    return `FTCC Medical Clinic successfully conducted a YAKAP Caravan in ${location}, delivering essential healthcare services to the community through its YAKAP Program.`;
+    return `FTCC Medical Clinic successfully conducted a **${what}** in **${location}**, delivering essential healthcare services to the community through its YAKAP Program.`;
   }
 
   if (postPhase === "during") {
-    return `As part of our continuity of service in medicine dispensing, FTCC Medical Clinic is conducting an AFTERCARE PROGRAM for ${location}, delivering essential healthcare services to the community through its YAKAP Program.`;
+    return `As part of our continuity of service in medicine dispensing, FTCC Medical Clinic is conducting an AFTERCARE PROGRAM for **${location}**, delivering essential healthcare services to the community through its YAKAP Program.`;
   }
-  return `As part of our continuity of service in medicine dispensing, FTCC Medical Clinic successfully conducted an AFTERCARE PROGRAM for ${location}, delivering essential healthcare services to the community through its YAKAP Program.`;
+  return `As part of our continuity of service in medicine dispensing, FTCC Medical Clinic successfully conducted an AFTERCARE PROGRAM for **${location}**, delivering essential healthcare services to the community through its YAKAP Program.`;
 }
 
 function includeHashtags(what: MissionType, postPhase: PostPhase): boolean {
@@ -45,14 +45,14 @@ function includeHashtags(what: MissionType, postPhase: PostPhase): boolean {
 export function generateCaption({ what, where, when, postPhase, services }: MissionFormState): string {
   const location = where || "{{WHERE}}";
   const formatted = formatMissionDate(when);
-  const header = postPhase === "during" ? DURING_HEADER : AFTER_HEADER;
+  const header = postPhase === "during" ? `**NOW HAPPENING: ${what?.toUpperCase()}**` : `**${what?.toUpperCase()} UPDATE**`;
   const intro = what ? buildIntro(what, postPhase, where) : "FTCC Medical Clinic {{WHAT}} in {{WHERE}}, delivering essential healthcare services to the community through its YAKAP Program.";
   const servicesBlock = buildServicesBlock(services);
-  const footer = `This meaningful outreach was made possible through our valued partnership with ${location}. Their support and collaboration played a vital role in the success of this initiative.
+  const footer = `This meaningful outreach is made possible through our valued partnership with **${location}**. Their support and collaboration play a vital role in the success of this initiative.
 
-Together, we continue bringing healthcare closer to the community.`;
+Together, we continue bringing healthcare closer to every Filipino community.`;
 
-  const hashtagBlock = what && includeHashtags(what, postPhase) ? `\n\n${HASHTAGS}` : "";
+  const hashtagBlock = what && includeHashtags(what, postPhase) ? `\n\n#FTCCYakap #YAKAPCaravan #PreventiveHealthcare #CommunityCare` : "";
 
   return `${header} | ${formatted}
 📍 ${location}

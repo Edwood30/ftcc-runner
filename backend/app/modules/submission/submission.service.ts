@@ -106,7 +106,7 @@ export class SubmissionService {
     });
     const facebook = await publishMissionToFacebook(
       mission.caption,
-      mission.images.map((imagePath) => missionImagePublicUrl(imagePath)),
+      mission.images.map((imagePath: string) => missionImagePublicUrl(imagePath)),
     );
     await submissionRepository.markApproved(submission.id, mission.id);
     return { mission, facebook };
