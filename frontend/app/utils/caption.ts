@@ -15,6 +15,12 @@ function formatMissionDate(when: string): string {
   });
 }
 
+function extractBranchFromLocation(location: string): string {
+  // Extract branch name from location (e.g., "Pantao Gladiators Farm – Ligao Albay" -> "Ligao Albay")
+  const parts = location.split(/[–-]/);
+  return parts.length > 1 ? parts[parts.length - 1].trim() : location;
+}
+
 function buildServicesBlock(services: string[]): string {
   if (!services.length) return "";
   const bullets = services.map((service) => `• ${service}`).join("\n");
@@ -23,10 +29,11 @@ function buildServicesBlock(services: string[]): string {
 
 function buildIntro(what: MissionType, postPhase: PostPhase, where: string): string {
   const location = where || "{{WHERE}}";
+  const branch = extractBranchFromLocation(location);
 
   if (what === "YAKAP Caravan") {
     if (postPhase === "during") {
-      return `FTCC Medical Clinic – Ligao Albay is conducting a **${what}** at **${location}**, bringing essential healthcare services closer to the community through the PhilHealth YAKAP Program.`;
+      return `FTCC Medical Clinic – ${branch} is conducting a **${what}** at **${location}**, bringing essential healthcare services closer to the community through the PhilHealth YAKAP Program.`;
     }
     return `FTCC Medical Clinic successfully conducted a **${what}** in **${location}**, delivering essential healthcare services to the community through its YAKAP Program.`;
   }
@@ -62,3 +69,5 @@ Together, we continue bringing quality healthcare closer to every Filipino commu
 ${intro}${servicesBlock}
 ${footer}${hashtagBlock}`;
 }
+
+
