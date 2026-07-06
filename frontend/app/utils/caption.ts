@@ -50,9 +50,11 @@ export function generateCaption({ what, where, when, postPhase, services }: Miss
   const servicesBlock = buildServicesBlock(services);
   const footer = `This meaningful outreach is made possible through our valued partnership with **${location}**. Their support and collaboration play a vital role in the success of this initiative.
 
-Together, we continue bringing healthcare closer to every Filipino community.`;
+We also acknowledge our trusted partner, **RG-Med Pharmacy**, a PhilHealth Accredited Pharmacy, for supporting the initiative and helping ensure that qualified beneficiaries receive their prescribed medicines under the PhilHealth YAKAP and GAMOT Programs.
 
-  const hashtagBlock = what && includeHashtags(what, postPhase) ? `\n\n#FTCCYakap #YAKAPCaravan #PreventiveHealthcare #CommunityCare` : "";
+Together, we continue bringing quality healthcare closer to every Filipino community.`;
+
+  const hashtagBlock = what && includeHashtags(what, postPhase) ? `\n\n#FTCCYakap #YAKAPCaravan #PreventiveHealthcare #CommunityCare #RGMedPharmacy` : "";
 
   return `${header} | ${formatted}
 📍 ${location}
