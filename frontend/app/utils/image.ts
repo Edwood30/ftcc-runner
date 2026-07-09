@@ -33,6 +33,7 @@ export async function processImage(
   overlayImg: HTMLImageElement,
   frameConfig: { canvas: { width: number; height: number }; frame: { x: number; y: number; width: number; height: number } },
 ): Promise<string> {
+  const AUTO_HD_SCALE = 2;
   const userImg = await sourceToImage(source);
   const { width: canvasWidth, height: canvasHeight } = frameConfig.canvas;
   const { x, y, width, height } = frameConfig.frame;
@@ -64,8 +65,17 @@ export async function processImage(
   if (overlayImg && overlayImg.width > 0 && overlayImg.height > 0) {
     ctx.drawImage(overlayImg, 0, 0, canvasWidth, canvasHeight);
   }
-  
-  return canvas.toDataURL("image/jpeg", 0.88);
+
+  const hdCanvas = document.createElement("canvas");
+  hdCanvas.width = canvasWidth * AUTO_HD_SCALE;
+  hdCanvas.height = canvasHeight * AUTO_HD_SCALE;
+  const hdCtx = hdCanvas.getContext("2d");
+  if (!hdCtx) throw new Error("Canvas context unavailable.");
+  hdCtx.imageSmoothingEnabled = true;
+  hdCtx.imageSmoothingQuality = "high";
+  hdCtx.drawImage(canvas, 0, 0, hdCanvas.width, hdCanvas.height);
+
+  return hdCanvas.toDataURL("image/jpeg", 0.92);
 }
 
 export function readImageDimensions(file: File): Promise<{ width: number; height: number }> {
