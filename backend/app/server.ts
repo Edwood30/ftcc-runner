@@ -10,7 +10,7 @@ async function bootstrap(): Promise<void> {
   await ensureDirectory(env.FILE_ROOT);
   await connectPrisma();
 
-  const server = app.listen(env.PORT, () => {
+  const server = app.listen(env.PORT, "0.0.0.0", () => {
     logger.info(`FTCC backend running on port ${env.PORT} with MongoDB connected`);
     startTelegramBot();
   });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createMission } from "../../services/mission-service";
-import type { ProcessedImage } from "../../types/mission";
+import type { BranchOverlay, ProcessedImage } from "../../types/mission";
 import { useImageEditor } from "../../hooks/useImageEditor";
 import { useMissionGenerator } from "../../hooks/useMissionGenerator";
 import { loadBranches } from "../../utils/branches";
@@ -13,7 +13,7 @@ import { MissionModule } from "../module/MissionModule";
 export function DashboardPage() {
   const { editedImages, editingFile, openEditor, closeEditor, saveEditedImage, clearEditedImages } = useImageEditor();
   const mission = useMissionGenerator(editedImages);
-  const [branches, setBranches] = useState(() => loadBranches());
+  const [branches, setBranches] = useState<BranchOverlay[]>([]);
   const [activePreview, setActivePreview] = useState<ProcessedImage | null>(null);
   const [generatedBatch, setGeneratedBatch] = useState<{ what: string; where: string; when: string; caption: string; images: ProcessedImage[] } | null>(null);
   const [isSavingHistory, setIsSavingHistory] = useState(false);
@@ -22,7 +22,19 @@ export function DashboardPage() {
   const [historyStatusTone, setHistoryStatusTone] = useState<"success" | "error" | "info">("info");
 
   useEffect(() => {
-    const onFocus = () => setBranches(loadBranches());
+    const refreshBranches = async () => {
+      try {
+        const nextBranches = await loadBranches();
+        setBranches(nextBranches);
+      } catch {
+        setBranches([]);
+      }
+    };
+
+    void refreshBranches();
+    const onFocus = () => {
+      void refreshBranches();
+    };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);

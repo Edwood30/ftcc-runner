@@ -1,7 +1,5 @@
 import type { BranchOverlay } from "../types/mission";
-
-const CUSTOM_BRANCHES_KEY = "ftcc-custom-branches";
-const DELETED_INCLUDED_BRANCHES_KEY = "ftcc-deleted-included-branches";
+import { API_CONFIG } from "../configuration/api";
 
 export const DEFAULT_BRANCHES: BranchOverlay[] = [
   {
@@ -10,82 +8,61 @@ export const DEFAULT_BRANCHES: BranchOverlay[] = [
     overlaySrc: "/FTCC Overlay.png",
     builtIn: true,
   },
-];
-
-const INCLUDED_BRANCHES: BranchOverlay[] = [
   {
     id: "ligao",
     name: "Ligao Overlay (Ligao Branch)",
     overlaySrc: "/Ligao Overlay.png",
+    builtIn: true,
   },
 ];
 
-function isBranchOverlay(value: unknown): value is BranchOverlay {
-  if (!value || typeof value !== "object") return false;
-  const branch = value as Partial<BranchOverlay>;
-  return (
-    typeof branch.id === "string" &&
-    typeof branch.name === "string" &&
-    typeof branch.overlaySrc === "string"
-  );
+interface ApiEnvelope<T> {
+  success: boolean;
+  message: string;
+  data: T;
 }
 
-export function loadCustomBranches(): BranchOverlay[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(CUSTOM_BRANCHES_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isBranchOverlay);
-  } catch {
-    return [];
+export async function loadBranches(): Promise<BranchOverlay[]> {
+  const response = await fetch(`${API_CONFIG.baseUrl}/branches`, {
+    method: "GET",
+    headers: API_CONFIG.defaultHeaders,
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to load branches.");
   }
+
+  const payload = (await response.json()) as ApiEnvelope<BranchOverlay[]>;
+  return payload.data;
 }
 
-function loadDeletedIncludedBranchIds(): string[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(DELETED_INCLUDED_BRANCHES_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item): item is string => typeof item === "string");
-  } catch {
-    return [];
+export async function saveCustomBranch(branch: BranchOverlay): Promise<BranchOverlay[]> {
+  const response = await fetch(`${API_CONFIG.baseUrl}/branches`, {
+    method: "POST",
+    headers: API_CONFIG.defaultHeaders,
+    body: JSON.stringify(branch),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to save branch.");
   }
+
+  const payload = (await response.json()) as ApiEnvelope<BranchOverlay[]>;
+  return payload.data;
 }
 
-export function loadBranches(): BranchOverlay[] {
-  const deletedIncludedIds = new Set(loadDeletedIncludedBranchIds());
-  return [
-    ...DEFAULT_BRANCHES,
-    ...INCLUDED_BRANCHES.filter((branch) => !deletedIncludedIds.has(branch.id)),
-    ...loadCustomBranches(),
-  ];
-}
+export async function deleteCustomBranch(branchId: string): Promise<BranchOverlay[]> {
+  const response = await fetch(`${API_CONFIG.baseUrl}/branches/${encodeURIComponent(branchId)}`, {
+    method: "DELETE",
+    headers: API_CONFIG.defaultHeaders,
+  });
 
-export function saveCustomBranch(branch: BranchOverlay): BranchOverlay[] {
-  const customBranches = loadCustomBranches();
-  const nextBranches = [
-    ...customBranches.filter((item) => item.id !== branch.id),
-    branch,
-  ];
-  window.localStorage.setItem(CUSTOM_BRANCHES_KEY, JSON.stringify(nextBranches));
-  return nextBranches;
-}
-
-export function deleteCustomBranch(branchId: string): BranchOverlay[] {
-  const includedBranch = INCLUDED_BRANCHES.find((branch) => branch.id === branchId);
-  if (includedBranch) {
-    const deletedIds = new Set(loadDeletedIncludedBranchIds());
-    deletedIds.add(branchId);
-    window.localStorage.setItem(DELETED_INCLUDED_BRANCHES_KEY, JSON.stringify([...deletedIds]));
-    return loadCustomBranches();
+  if (!response.ok) {
+    throw new Error("Unable to delete branch.");
   }
-  const nextBranches = loadCustomBranches().filter((branch) => branch.id !== branchId);
-  window.localStorage.setItem(CUSTOM_BRANCHES_KEY, JSON.stringify(nextBranches));
-  return nextBranches;
+
+  const payload = (await response.json()) as ApiEnvelope<BranchOverlay[]>;
+  return payload.data;
 }
 
 export function buildBranchId(name: string): string {

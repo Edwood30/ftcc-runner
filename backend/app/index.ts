@@ -7,6 +7,7 @@ import { env } from "./configuration/env.js";
 import { pingPrisma } from "./configuration/prisma.js";
 import { loggerMiddleware } from "./middleware/logger.middleware.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
+import { branchRouter } from "./modules/branch/branch.router.js";
 import { missionRouter } from "./modules/mission/mission.router.js";
 import { submissionRouter } from "./modules/submission/submission.router.js";
 
@@ -20,11 +21,20 @@ const defaultAllowedOriginPatterns = [
 
 const localAllowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"];
 
+function isLocalNetworkOrigin(origin: string): boolean {
+  const normalizedOrigin = origin.replace(/\/+$/, "");
+  const match = normalizedOrigin.match(/^https?:\/\/(.+):(\d+)$/);
+  if (!match) return false;
+  const hostname = match[1];
+  if (hostname === "localhost" || hostname === "127.0.0.1") return true;
+  return /^(10|192\.168|172\.(1[6-9]|2\d|3[0-1]))\./.test(hostname);
+}
+
 function isAllowedOrigin(origin: string): boolean {
   const normalizedOrigin = origin.replace(/\/+$/, "");
   return (
     env.CORS_ORIGINS.includes(normalizedOrigin) ||
-    (env.NODE_ENV !== "production" && localAllowedOrigins.includes(normalizedOrigin)) ||
+    (env.NODE_ENV !== "production" && (localAllowedOrigins.includes(normalizedOrigin) || isLocalNetworkOrigin(normalizedOrigin))) ||
     defaultAllowedOriginPatterns.some((pattern) => pattern.test(normalizedOrigin))
   );
 }
@@ -97,6 +107,7 @@ app.get("/health", async (_req, res, next) => {
   }
 });
 
+app.use("/branches", branchRouter);
 app.use("/missions", submissionRouter);
 app.use("/missions", missionRouter);
 app.use(errorMiddleware);

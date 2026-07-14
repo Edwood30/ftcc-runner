@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppHeader } from "../common/AppHeader";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -12,11 +12,17 @@ import {
 } from "../../utils/branches";
 
 export function BranchPage() {
-  const [branches, setBranches] = useState<BranchOverlay[]>(() => loadBranches());
+  const [branches, setBranches] = useState<BranchOverlay[]>([]);
   const [branchName, setBranchName] = useState("");
   const [overlayFile, setOverlayFile] = useState<File | null>(null);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    void loadBranches()
+      .then(setBranches)
+      .catch(() => setError("Unable to load branch overlays."));
+  }, []);
   const canSave = useMemo(
     () => branchName.trim().length > 0 && Boolean(overlayFile),
     [branchName, overlayFile],
@@ -37,8 +43,8 @@ export function BranchPage() {
         name: branchName.trim(),
         overlaySrc,
       };
-      saveCustomBranch(branch);
-      setBranches(loadBranches());
+      const nextBranches = await saveCustomBranch(branch);
+      setBranches(nextBranches);
       setBranchName("");
       setOverlayFile(null);
       setStatus("Branch saved. It is now available in Mission Post.");
@@ -47,13 +53,17 @@ export function BranchPage() {
     }
   };
 
-  const handleDeleteBranch = (branch: BranchOverlay) => {
+  const handleDeleteBranch = async (branch: BranchOverlay) => {
     const confirmed = window.confirm(`Delete ${branch.name}?`);
     if (!confirmed) return;
-    deleteCustomBranch(branch.id);
-    setBranches(loadBranches());
-    setStatus("Branch overlay deleted.");
-    setError("");
+    try {
+      const nextBranches = await deleteCustomBranch(branch.id);
+      setBranches(nextBranches);
+      setStatus("Branch overlay deleted.");
+      setError("");
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Unable to delete branch.");
+    }
   };
 
   return (
@@ -133,7 +143,7 @@ export function BranchPage() {
                         type="button"
                         aria-label={`Delete ${branch.name}`}
                         title="Delete overlay"
-                        onClick={() => handleDeleteBranch(branch)}
+                        onClick={() => void handleDeleteBranch(branch)}
                         className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-white text-lg font-bold text-rose-600 transition hover:border-rose-300 hover:bg-rose-50"
                       >
                         &#128465;
