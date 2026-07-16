@@ -107,7 +107,40 @@ app.get("/health", async (_req, res, next) => {
   }
 });
 
+app.get("/debug", (_req, res) => {
+  res.json({
+    success: true,
+    message: "Backend API is running",
+    data: {
+      env: process.env.NODE_ENV,
+      port: process.env.PORT,
+      apiRoot: process.env.APP_ROOT,
+      routes: [
+        "GET /",
+        "GET /health",
+        "GET /debug",
+        "GET /branches",
+        "POST /branches",
+        "DELETE /branches/:id",
+        "POST /missions",
+        "GET /missions",
+        "GET /missions/:id",
+      ],
+    },
+  });
+});
+
 app.use("/branches", branchRouter);
 app.use("/missions", submissionRouter);
 app.use("/missions", missionRouter);
+
+// Catch-all 404 handler for unmatched routes
+app.use((_req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found.",
+    data: null,
+  });
+});
+
 app.use(errorMiddleware);

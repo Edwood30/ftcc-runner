@@ -44,7 +44,10 @@ export async function loadBranches(): Promise<BranchOverlay[]> {
 
 export async function saveCustomBranch(branch: BranchOverlay): Promise<BranchOverlay[]> {
   try {
-    const response = await fetch(`${API_CONFIG.baseUrl}/branches`, {
+    const url = `${API_CONFIG.baseUrl}/branches`;
+    console.log(`[BRANCH] Saving to ${url}`, { name: branch.name, id: branch.id, hasImage: branch.overlaySrc.length > 100 });
+    
+    const response = await fetch(url, {
       method: "POST",
       headers: API_CONFIG.defaultHeaders,
       body: JSON.stringify(branch),
@@ -60,14 +63,17 @@ export async function saveCustomBranch(branch: BranchOverlay): Promise<BranchOve
       } catch {
         // Failed to parse error response, use default message
       }
-      throw new Error(`${errorMessage} (HTTP ${response.status})`);
+      const detailedError = `${errorMessage} (HTTP ${response.status}) - Endpoint: ${url}`;
+      console.error("[BRANCH] Save failed:", detailedError);
+      throw new Error(detailedError);
     }
 
     const payload = (await response.json()) as ApiEnvelope<BranchOverlay[]>;
+    console.log("[BRANCH] Save successful");
     return payload.data;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Failed to save branch:", message);
+    console.error("[BRANCH] Save error:", message);
     throw new Error(`Failed to save branch: ${message}`);
   }
 }
