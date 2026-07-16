@@ -43,32 +43,62 @@ export async function loadBranches(): Promise<BranchOverlay[]> {
 }
 
 export async function saveCustomBranch(branch: BranchOverlay): Promise<BranchOverlay[]> {
-  const response = await fetch(`${API_CONFIG.baseUrl}/branches`, {
-    method: "POST",
-    headers: API_CONFIG.defaultHeaders,
-    body: JSON.stringify(branch),
-  });
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/branches`, {
+      method: "POST",
+      headers: API_CONFIG.defaultHeaders,
+      body: JSON.stringify(branch),
+    });
 
-  if (!response.ok) {
-    throw new Error("Unable to save branch.");
+    if (!response.ok) {
+      let errorMessage = "Unable to save branch.";
+      try {
+        const errorPayload = (await response.json()) as { message?: string };
+        if (errorPayload.message) {
+          errorMessage = errorPayload.message;
+        }
+      } catch {
+        // Failed to parse error response, use default message
+      }
+      throw new Error(`${errorMessage} (HTTP ${response.status})`);
+    }
+
+    const payload = (await response.json()) as ApiEnvelope<BranchOverlay[]>;
+    return payload.data;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Failed to save branch:", message);
+    throw new Error(`Failed to save branch: ${message}`);
   }
-
-  const payload = (await response.json()) as ApiEnvelope<BranchOverlay[]>;
-  return payload.data;
 }
 
 export async function deleteCustomBranch(branchId: string): Promise<BranchOverlay[]> {
-  const response = await fetch(`${API_CONFIG.baseUrl}/branches/${encodeURIComponent(branchId)}`, {
-    method: "DELETE",
-    headers: API_CONFIG.defaultHeaders,
-  });
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/branches/${encodeURIComponent(branchId)}`, {
+      method: "DELETE",
+      headers: API_CONFIG.defaultHeaders,
+    });
 
-  if (!response.ok) {
-    throw new Error("Unable to delete branch.");
+    if (!response.ok) {
+      let errorMessage = "Unable to delete branch.";
+      try {
+        const errorPayload = (await response.json()) as { message?: string };
+        if (errorPayload.message) {
+          errorMessage = errorPayload.message;
+        }
+      } catch {
+        // Failed to parse error response, use default message
+      }
+      throw new Error(`${errorMessage} (HTTP ${response.status})`);
+    }
+
+    const payload = (await response.json()) as ApiEnvelope<BranchOverlay[]>;
+    return payload.data;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Failed to delete branch:", message);
+    throw new Error(`Failed to delete branch: ${message}`);
   }
-
-  const payload = (await response.json()) as ApiEnvelope<BranchOverlay[]>;
-  return payload.data;
 }
 
 export function buildBranchId(name: string): string {

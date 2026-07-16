@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { env } from "../../configuration/env.js";
+import { logger } from "../../helper/logger.js";
 
 export interface BranchOverlay {
   id: string;
@@ -59,16 +60,22 @@ function createBranchId(name: string): string {
 }
 
 async function ensureStorageFile(): Promise<void> {
-  await fs.mkdir(path.dirname(STORAGE_PATH), { recursive: true });
   try {
-    await fs.access(STORAGE_PATH);
-  } catch (error) {
-    const err = error as NodeJS.ErrnoException;
-    if (err.code === "ENOENT") {
-      await fs.writeFile(STORAGE_PATH, JSON.stringify({ customBranches: [] }, null, 2));
-    } else {
-      throw error;
+    await fs.mkdir(path.dirname(STORAGE_PATH), { recursive: true });
+    try {
+      await fs.access(STORAGE_PATH);
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code === "ENOENT") {
+        logger.info(`Creating branches storage file at ${STORAGE_PATH}`);
+        await fs.writeFile(STORAGE_PATH, JSON.stringify({ customBranches: [] }, null, 2));
+      } else {
+        throw error;
+      }
     }
+  } catch (error) {
+    logger.error("Failed to ensure storage file:", error);
+    throw error;
   }
 }
 
@@ -94,19 +101,31 @@ export async function listBranches(): Promise<BranchOverlay[]> {
 }
 
 export async function createBranch(input: unknown): Promise<BranchOverlay[]> {
+  logger.info("Creating branch with input:", { hasInput: Boolean(input), type: typeof input });
+  
   const payload = normalizeBranchPayload(input);
   if (!payload) {
-    throw new Error("Please provide a branch name and overlay image.");
+    const error = "Please provide a branch name and overlay image.";
+    logger.error("Branch normalization failed:", { input: input instanceof Object ? Object.keys(input as Record<string, unknown>) : input });
+    throw new Error(error);
   }
 
-  const store = await readStore();
-  const nextCustomBranches = [
-    ...store.customBranches.filter((branch) => branch.id !== payload.id),
-    payload,
-  ];
+  logger.info(`Normalized branch payload: ${payload.name} (${payload.id})`);
 
-  await writeStore({ customBranches: nextCustomBranches });
-  return listBranches();
+  try {
+    const store = await readStore();
+    const nextCustomBranches = [
+      ...store.customBranches.filter((branch) => branch.id !== payload.id),
+      payload,
+    ];
+
+    await writeStore({ customBranches: nextCustomBranches });
+    logger.info(`Branch created successfully: ${payload.name}`);
+    return listBranches();
+  } catch (error) {
+    logger.error("Failed to create branch:", error);
+    throw error;
+  }
 }
 
 export async function deleteBranch(branchId: string): Promise<BranchOverlay[]> {
