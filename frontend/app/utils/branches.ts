@@ -23,17 +23,23 @@ interface ApiEnvelope<T> {
 }
 
 export async function loadBranches(): Promise<BranchOverlay[]> {
-  const response = await fetch(`${API_CONFIG.baseUrl}/branches`, {
-    method: "GET",
-    headers: API_CONFIG.defaultHeaders,
-  });
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/branches`, {
+      method: "GET",
+      headers: API_CONFIG.defaultHeaders,
+    });
 
-  if (!response.ok) {
-    throw new Error("Unable to load branches.");
+    if (!response.ok) {
+      throw new Error("Unable to load branches from API.");
+    }
+
+    const payload = (await response.json()) as ApiEnvelope<BranchOverlay[]>;
+    return payload.data;
+  } catch (error) {
+    // Fallback to default branches if API is unavailable
+    console.warn("Failed to load branches from API, using default branches:", error);
+    return DEFAULT_BRANCHES;
   }
-
-  const payload = (await response.json()) as ApiEnvelope<BranchOverlay[]>;
-  return payload.data;
 }
 
 export async function saveCustomBranch(branch: BranchOverlay): Promise<BranchOverlay[]> {
